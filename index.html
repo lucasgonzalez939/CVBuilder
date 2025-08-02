@@ -1209,30 +1209,10 @@
                           {skills[category].map((skill, index) => {
                             return (
                               <div key={index} className="flex items-center mb-2">
-                                <input
-                                  type="text"
-                                  value={skill}
-                                  onChange={(e) => handleSkillsChange(category, index, e.target.value)}
-                                  className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mr-2"
-                                />
-                                <button
-                                  onClick={() => removeSkill(category, index)}
-                                  className="p-1 bg-red-400 text-white rounded-full hover:bg-red-500 transition-colors"
-                                  title={t.removeSkill}
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                                  </svg>
-                                </button>
+                                <h4 className="cv-item-title text-md">{skill}</h4>
                               </div>
                             );
                           })}
-                          <button
-                            onClick={() => addSkill(category)}
-                            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-                          >
-                            {t.addSkill}
-                          </button>
                         </div>
                       );
                     })}
