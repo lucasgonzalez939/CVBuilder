@@ -1204,7 +1204,7 @@
                     <h3 className="text-lg cv-section-title">{t.skills}</h3>
                     {Object.keys(skills).map((category) => {
                       return (
-                        <div key={category} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                        <div key={category} className="mb-6">
                           <h3 className="text-lg font-medium text-gray-700 mb-3">{t[category]}:</h3>
                           {skills[category].map((skill, index) => {
                             return (
