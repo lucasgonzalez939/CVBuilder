@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,44 +13,57 @@
     body {
       font-family: 'Inter', sans-serif;
     }
+
     .cv-section-title {
       font-weight: 600;
-      color: #2d3748; /* Darker gray for titles */
+      color: #2d3748;
+      /* Darker gray for titles */
       margin-bottom: 0.5rem;
       padding-bottom: 0.25rem;
-      border-bottom: 1px solid #e2e8f0; /* Light border for separation */
+      border-bottom: 1px solid #e2e8f0;
+      /* Light border for separation */
     }
+
     .cv-item-title {
       font-weight: 500;
       color: #2d3748;
     }
+
     .cv-item-subtitle {
       font-weight: 400;
-      color: #4a5568; /* Medium gray */
+      color: #4a5568;
+      /* Medium gray */
     }
+
     .cv-item-dates {
       font-weight: 300;
-      color: #718096; /* Lighter gray */
+      color: #718096;
+      /* Lighter gray */
     }
+
     .cv-description-list {
       list-style-type: disc;
       margin-left: 1.25rem;
       color: #4a5568;
     }
+
     .cv-description-list li {
       margin-bottom: 0.25rem;
     }
+
     .cv-skill-category {
       font-weight: 500;
       color: #2d3748;
       margin-right: 0.5rem;
     }
+
     .cv-skill-list {
       display: inline;
       color: #4a5568;
     }
   </style>
 </head>
+
 <body>
   <div id="root"></div>
 
@@ -312,53 +326,54 @@
         }, 3000); // Message disappears after 3 seconds
       };
 
-// Generic update function for CV data based on current locale
-const updateCvData = (section, id, field, value, index = null) => {
-  setCvDataByLocale(prev => {
-    const currentLocaleData = { ...prev[locale] };
-    if (section === 'personalInfo' || section === 'summary') {
-      return {
-        ...prev,
-        [locale]: {
-          ...currentLocaleData,
-          [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
-        }
-      };
-    } else if (Array.isArray(currentLocaleData[section])) {
-      const updatedArray = currentLocaleData[section].map(item => {
-        if (item.id === id) {
-          if (field === 'description' && index !== null) {
-            const newDescription = [...item.description];
-            newDescription[index] = value;
-            return { ...item, description: newDescription };
+      // Generic update function for CV data based on current locale
+      const updateCvData = (section, id, field, value, index = null) => {
+        setCvDataByLocale(prev => {
+          const currentLocaleData = { ...prev[locale] };
+          if (section === 'personalInfo' || section === 'summary') {
+            return {
+              ...prev,
+              [locale]: {
+                ...currentLocaleData,
+                [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
+              }
+            };
+          } else if (Array.isArray(currentLocaleData[section])) {
+            const updatedArray = currentLocaleData[section].map(item => {
+              if (item.id === id) {
+                if (field === 'description' && index !== null) {
+                  const newDescription = [...item.description];
+                  newDescription[index] = value;
+                  return { ...item, description: newDescription };
+                }
+                return { ...item, [field]: value };
+              }
+              return item;
+            });
+            return {
+              ...prev,
+              [locale]: {
+                ...currentLocaleData,
+                [section]: updatedArray
+              }
+            };
+          } else if (section === 'skills') {
+            const newSkills = { ...currentLocaleData.skills };
+            // The 'id' parameter is the category, and 'field' is the index
+            const newCategoryArray = [...newSkills[id]];
+            newCategoryArray[field] = value; // Use the 'field' parameter, which holds the index
+            newSkills[id] = newCategoryArray;
+            return {
+              ...prev,
+              [locale]: {
+                ...currentLocaleData,
+                skills: newSkills
+              }
+            };
           }
-          return { ...item, [field]: value };
-        }
-        return item;
-      });
-      return {
-        ...prev,
-        [locale]: {
-          ...currentLocaleData,
-          [section]: updatedArray
-        }
+          return prev;
+        });
       };
-    } else if (section === 'skills') {
-      const newSkills = { ...currentLocaleData.skills };
-      const newCategoryArray = [...newSkills[id]]; // Create a new array for the specific skill category
-      newCategoryArray[index] = value; // Update the new array
-      newSkills[id] = newCategoryArray; // Assign the new array back to the skills object
-      return {
-        ...prev,
-        [locale]: {
-          ...currentLocaleData,
-          skills: newSkills
-        }
-      };
-    }
-    return prev;
-  });
-};
 
       // Functions to handle adding/removing items in arrays
       const addItem = (section, newItem) => {
@@ -1269,4 +1284,5 @@ const updateCvData = (section, id, field, value, index = null) => {
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
+
 </html>
