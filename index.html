@@ -312,51 +312,53 @@
         }, 3000); // Message disappears after 3 seconds
       };
 
-      // Generic update function for CV data based on current locale
-      const updateCvData = (section, id, field, value, index = null) => {
-        setCvDataByLocale(prev => {
-          const currentLocaleData = { ...prev[locale] };
-          if (section === 'personalInfo' || section === 'summary') {
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
-              }
-            };
-          } else if (Array.isArray(currentLocaleData[section])) {
-            const updatedArray = currentLocaleData[section].map(item => {
-              if (item.id === id) {
-                if (field === 'description' && index !== null) {
-                  const newDescription = [...item.description];
-                  newDescription[index] = value;
-                  return { ...item, description: newDescription };
-                }
-                return { ...item, [field]: value };
-              }
-              return item;
-            });
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                [section]: updatedArray
-              }
-            };
-          } else if (section === 'skills') {
-            const newSkills = { ...currentLocaleData.skills };
-            newSkills[id][index] = value; // id here is the category (e.g., 'programmingLanguages')
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                skills: newSkills
-              }
-            };
-          }
-          return prev;
-        });
+// Generic update function for CV data based on current locale
+const updateCvData = (section, id, field, value, index = null) => {
+  setCvDataByLocale(prev => {
+    const currentLocaleData = { ...prev[locale] };
+    if (section === 'personalInfo' || section === 'summary') {
+      return {
+        ...prev,
+        [locale]: {
+          ...currentLocaleData,
+          [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
+        }
       };
+    } else if (Array.isArray(currentLocaleData[section])) {
+      const updatedArray = currentLocaleData[section].map(item => {
+        if (item.id === id) {
+          if (field === 'description' && index !== null) {
+            const newDescription = [...item.description];
+            newDescription[index] = value;
+            return { ...item, description: newDescription };
+          }
+          return { ...item, [field]: value };
+        }
+        return item;
+      });
+      return {
+        ...prev,
+        [locale]: {
+          ...currentLocaleData,
+          [section]: updatedArray
+        }
+      };
+    } else if (section === 'skills') {
+      const newSkills = { ...currentLocaleData.skills };
+      const newCategoryArray = [...newSkills[id]]; // Create a new array for the specific skill category
+      newCategoryArray[index] = value; // Update the new array
+      newSkills[id] = newCategoryArray; // Assign the new array back to the skills object
+      return {
+        ...prev,
+        [locale]: {
+          ...currentLocaleData,
+          skills: newSkills
+        }
+      };
+    }
+    return prev;
+  });
+};
 
       // Functions to handle adding/removing items in arrays
       const addItem = (section, newItem) => {
