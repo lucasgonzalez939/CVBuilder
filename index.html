@@ -385,8 +385,25 @@
             const [locale, setLocale] = React.useState('en');
             const t = translations[locale]; // Shorthand for translations based on current locale
 
+
+            // Function to get initial data from local storage or use defaults
+            const getInitialData = () => {
+                try {
+                    const storedData = localStorage.getItem('cvData');
+                    if (storedData) {
+                        return JSON.parse(storedData);
+                    }
+                } catch (error) {
+                    console.error("Failed to parse data from localStorage:", error);
+                    // If an error occurs, fall back to the default data.
+                }
+                return initialCvDataByLocale;
+            };
+
             // State variables to hold CV data for both locales
-            const [cvDataByLocale, setCvDataByLocale] = React.useState(initialCvDataByLocale);
+            const [cvDataByLocale, setCvDataByLocale] = React.useState(getInitialData);
+            // State variables to hold CV data for both locales
+            //const [cvDataByLocale, setCvDataByLocale] = React.useState(initialCvDataByLocale);
 
             // Destructure current locale's CV data for easier access
             const { personalInfo, summary, experiences, education, skills, projects, awards } = cvDataByLocale[locale];
@@ -403,6 +420,18 @@
             const [isMessageVisible, setIsMessageVisible] = React.useState(false);
             const [showConfirmModal, setShowConfirmModal] = React.useState(false);
             const [confirmAction, setConfirmAction] = React.useState(null); // Function to execute on confirm
+
+
+            // Auto-save effect to save data to local storage whenever cvDataByLocale changes
+            React.useEffect(() => {
+                try {
+                    const jsonString = JSON.stringify(cvDataByLocale);
+                    localStorage.setItem('cvData', jsonString);
+                    console.log("CV data saved to local storage.");
+                } catch (error) {
+                    console.error("Failed to save data to local storage:", error);
+                }
+            }, [cvDataByLocale]); // This effect runs whenever cvDataByLocale changes
 
             // Function to display custom messages
             const showMessage = (msg) => {
@@ -646,7 +675,7 @@
 
                     // Construct the new filename
                     a.download = `${sanitizedName}_cv_data.json`;
-                    
+
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
