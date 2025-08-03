@@ -2,1290 +2,1384 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CV Builder</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Inter CDN -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-    .cv-section-title {
-      font-weight: 600;
-      color: #2d3748;
-      /* Darker gray for titles */
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.25rem;
-      border-bottom: 1px solid #e2e8f0;
-      /* Light border for separation */
-    }
+        .cv-section-title {
+            font-weight: 600;
+            color: #2d3748;
+            /* Darker gray for titles */
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #e2e8f0;
+            /* Light border for separation */
+        }
 
-    .cv-item-title {
-      font-weight: 500;
-      color: #2d3748;
-    }
+        .cv-item-title {
+            font-weight: 500;
+            color: #2d3748;
+        }
 
-    .cv-item-subtitle {
-      font-weight: 400;
-      color: #4a5568;
-      /* Medium gray */
-    }
+        .cv-item-subtitle {
+            font-weight: 400;
+            color: #4a5568;
+            /* Medium gray */
+        }
 
-    .cv-item-dates {
-      font-weight: 300;
-      color: #718096;
-      /* Lighter gray */
-    }
+        .cv-item-dates {
+            font-weight: 300;
+            color: #718096;
+            /* Lighter gray */
+        }
 
-    .cv-description-list {
-      list-style-type: disc;
-      margin-left: 1.25rem;
-      color: #4a5568;
-    }
+        .cv-description-list {
+            list-style-type: disc;
+            margin-left: 1.25rem;
+            color: #4a5568;
+        }
 
-    .cv-description-list li {
-      margin-bottom: 0.25rem;
-    }
+        .cv-description-list li {
+            margin-bottom: 0.25rem;
+        }
 
-    .cv-skill-category {
-      font-weight: 500;
-      color: #2d3748;
-      margin-right: 0.5rem;
-    }
+        .cv-skill-category {
+            font-weight: 500;
+            color: #2d3748;
+            margin-right: 0.5rem;
+        }
 
-    .cv-skill-list {
-      display: inline;
-      color: #4a5568;
-    }
-    .no-break-inside {
-    page-break-inside: avoid;
-}
-  </style>
+        .cv-skill-list {
+            display: inline;
+            color: #4a5568;
+        }
+
+        .no-break-inside {
+            page-break-inside: avoid;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="root"></div>
+    <div id="root"></div>
 
-  <!-- React and ReactDOM CDNs -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <!-- Babel for JSX transformation in browser (for development only) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- React and ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX transformation in browser (for development only) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <script type="text/babel">
-    // Translation object for English and Spanish UI elements
-    const translations = {
-      en: {
-        cvBuilder: "CV Builder",
-        personalInformation: "Personal Information",
-        name: "Name",
-        title: "Title",
-        email: "Email",
-        phone: "Phone",
-        linkedin: "LinkedIn",
-        github: "GitHub",
-        website: "Website",
-        address: "Address",
-        profilePicture: "Profile Picture", // New translation
-        uploadImage: "Upload Image", // New translation
-        removeImage: "Remove Image", // New translation
-        summary: "Summary",
-        summaryPlaceholder: "A brief overview of your professional background and goals.",
-        workExperience: "Work Experience",
-        addExperience: "Add Experience",
-        removeExperience: "Remove Experience",
-        jobTitle: "Title",
-        company: "Company",
-        location: "Location",
-        startDate: "Start Date",
-        endDate: "End Date",
-        present: "Present",
-        responsibilitiesAchievements: "Responsibilities/Achievements",
-        addDescriptionLine: "Add Description Line",
-        removeLine: "Remove line",
-        education: "Education",
-        addEducation: "Add Education",
-        removeEducation: "Remove Education",
-        degree: "Degree",
-        university: "University",
-        year: "Year",
-        detailsOptional: "Details (Optional)",
-        detailsPlaceholder: "e.g., Graduated with honors, Relevant coursework...",
-        skills: "Skills",
-        programmingLanguages: "Programming Languages",
-        frameworks: "Frameworks",
-        databases: "Databases",
-        tools: "Tools",
-        addSkill: "Add Skill",
-        removeSkill: "Remove skill",
-        projects: "Projects",
-        addProject: "Add Project",
-        removeProject: "Remove Project",
-        projectName: "Project Name",
-        technologiesUsed: "Technologies Used",
-        projectDescription: "Description",
-        projectDescriptionPlaceholder: "Brief description of the project and your role.",
-        linkOptional: "Link (Optional)",
-        awardsCertifications: "Awards & Certifications",
-        addAwardCertification: "Add Award/Certification",
-        removeAward: "Remove Award",
-        awardName: "Name",
-        awardYear: "Year",
-        awardDescriptionOptional: "Description (Optional)",
-        awardDescriptionPlaceholder: "e.g., Awarded for excellence in...",
-        exportToPdf: "Export to PDF",
-        exportCvSession: "Export CV Data File",
-        importCvSession: "Import CV Data File",
-        cvPreview: "CV Preview",
-        saveSuccess: "CV data saved to file successfully!",
-        saveError: "Error saving CV data to file. Please try again.",
-        loadSuccess: "CV data loaded from file successfully!",
-        loadError: "Error loading CV data from file. The file might be corrupted or invalid.",
-        noFileSelected: "No file selected.",
-        language: "Language",
-        english: "English",
-        spanish: "Spanish",
-        newSession: "New Session",
-        newSessionConfirm: "Are you sure you want to start a new session? All unsaved data will be lost.",
-        newSessionStarted: "New session started. All data cleared.",
-      },
-      es: {
-        cvBuilder: "Constructor de CV",
-        personalInformation: "Información Personal",
-        name: "Nombre",
-        title: "Título",
-        email: "Correo Electrónico",
-        phone: "Teléfono",
-        linkedin: "LinkedIn",
-        github: "GitHub",
-        website: "Sitio Web",
-        address: "Dirección",
-        profilePicture: "Foto de Perfil", // New translation
-        uploadImage: "Subir Imagen", // New translation
-        removeImage: "Eliminar Imagen", // New translation
-        summary: "Resumen",
-        summaryPlaceholder: "Una breve descripción de su experiencia profesional y objetivos.",
-        workExperience: "Experiencia Laboral",
-        addExperience: "Añadir Experiencia",
-        removeExperience: "Eliminar Experiencia",
-        jobTitle: "Puesto",
-        company: "Empresa",
-        location: "Ubicación",
-        startDate: "Fecha de Inicio",
-        endDate: "Fecha de Fin",
-        present: "Actualidad",
-        responsibilitiesAchievements: "Responsabilidades/Logros",
-        addDescriptionLine: "Añadir Línea de Descripción",
-        removeLine: "Eliminar línea",
-        education: "Educación",
-        addEducation: "Añadir Educación",
-        removeEducation: "Eliminar Educación",
-        degree: "Título",
-        university: "Universidad",
-        year: "Año",
-        detailsOptional: "Detalles (Opcional)",
-        detailsPlaceholder: "Ej: Graduado con honores, Cursos relevantes...",
-        skills: "Habilidades",
-        programmingLanguages: "Lenguajes de Programación",
-        frameworks: "Frameworks",
-        databases: "Bases de Datos",
-        tools: "Herramientas",
-        addSkill: "Añadir Habilidad",
-        removeSkill: "Eliminar habilidad",
-        projects: "Proyectos",
-        addProject: "Añadir Proyecto",
-        removeProject: "Eliminar Proyecto",
-        projectName: "Nombre del Proyecto",
-        technologiesUsed: "Tecnologías Utilizadas",
-        projectDescription: "Descripción",
-        projectDescriptionPlaceholder: "Breve descripción del proyecto y su rol.",
-        linkOptional: "Enlace (Opcional)",
-        awardsCertifications: "Premios y Certificaciones",
-        addAwardCertification: "Añadir Premio/Certificación",
-        removeAward: "Eliminar Premio",
-        awardName: "Nombre",
-        awardYear: "Año",
-        awardDescriptionOptional: "Descripción (Opcional)",
-        awardDescriptionPlaceholder: "Ej: Galardonado por excelencia en...",
-        exportToPdf: "Exportar a PDF",
-        exportCvSession: "Exportar Archivo de Datos CV",
-        importCvSession: "Importar Archivo de Datos CV",
-        cvPreview: "Vista Previa del CV",
-        saveSuccess: "¡Datos del CV guardados en archivo correctamente!",
-        saveError: "Error al guardar los datos del CV en archivo. Inténtelo de nuevo.",
-        loadSuccess: "¡Datos del CV cargados desde archivo correctamente!",
-        loadError: "Error al cargar los datos del CV desde archivo. El archivo podría estar corrupto o no válido.",
-        noFileSelected: "Ningún archivo seleccionado.",
-        language: "Idioma",
-        english: "Inglés",
-        spanish: "Español",
-        newSession: "Nueva Sesión",
-        newSessionConfirm: "¿Está seguro de que desea iniciar una nueva sesión? Se perderán todos los datos no guardados.",
-        newSessionStarted: "Nueva sesión iniciada. Todos los datos borrados.",
-      },
-    };
-
-    // Define a structure for an empty CV for a single locale
-    const emptyCvDataTemplate = {
-      personalInfo: {
-        name: '',
-        title: '',
-        email: '',
-        phone: '',
-        linkedin: '',
-        github: '',
-        website: '',
-        address: '',
-        profilePicture: '', // Added profile picture field
-        profilePictureWidth: null, // New: Store original image width for PDF
-        profilePictureHeight: null, // New: Store original image height for PDF
-      },
-      summary: '',
-      experiences: [],
-      education: [],
-      skills: {
-        programmingLanguages: [],
-        frameworks: [],
-        databases: [],
-        tools: [],
-      },
-      projects: [],
-      awards: [],
-    };
-
-    // Initial state for all CV data fields, structured by locale
-    const initialCvDataByLocale = {
-      en: {
-        personalInfo: {
-          name: 'John Doe',
-          title: 'Software Engineer',
-          email: 'john.doe@example.com',
-          phone: '123-456-7890',
-          linkedin: 'linkedin.com/in/johndoe',
-          github: 'github.com/johndoe',
-          website: 'johndoe.com',
-          address: 'Anytown, USA',
-          profilePicture: 'https://placehold.co/150x150/aabbcc/ffffff?text=JD', // Placeholder image
-          profilePictureWidth: 150, // Initial placeholder dimensions
-          profilePictureHeight: 150, // Initial placeholder dimensions
-        },
-        summary: 'Highly motivated and results-oriented software engineer with 5+ years of experience in developing robust and scalable web applications. Proficient in JavaScript, React, Node.js, and various database technologies. Seeking to leverage my skills to contribute to innovative projects.',
-        experiences: [
-          { id: 1, title: 'Senior Software Engineer', company: 'Tech Solutions Inc.', location: 'New York, NY', startDate: 'Jan 2022', endDate: 'Present', description: ['Led the development of a new microservices architecture, improving system scalability by 30%.', 'Implemented a real-time data processing pipeline using Kafka, reducing latency by 50%.', 'Mentored junior developers and conducted code reviews, ensuring high code quality.'] },
-          { id: 2, title: 'Software Developer', company: 'Innovate Corp.', location: 'San Francisco, CA', startDate: 'Aug 2019', endDate: 'Dec 2021', description: ['Developed and maintained front-end components using React and Redux.', 'Collaborated with product managers to translate requirements into technical specifications.', 'Optimized database queries, leading to a 20% improvement in application performance.'] },
-        ],
-        education: [
-          { id: 1, degree: 'M.S. in Computer Science', university: 'State University', location: 'Anytown, USA', year: '2019', details: 'Specialization in Artificial Intelligence and Machine Learning.' },
-          { id: 2, degree: 'B.S. in Software Engineering', university: 'City College', location: 'Anytown, USA', year: '2017', details: 'Graduated with honors.' },
-        ],
-        skills: { programmingLanguages: ['JavaScript', 'Python', 'Java', 'C++'], frameworks: ['React', 'Node.js', 'Express.js', 'Django', 'Spring Boot'], databases: ['MongoDB', 'PostgreSQL', 'MySQL'], tools: ['Git', 'Docker', 'Kubernetes', 'Jira', 'AWS'] },
-        projects: [
-          { id: 1, name: 'E-commerce Platform', technologies: 'React, Node.js, MongoDB, Stripe API', description: 'Developed a full-stack e-commerce platform with user authentication, product catalog, shopping cart, and payment gateway integration.', link: 'github.com/johndoe/ecommerce-platform' },
-        ],
-        awards: [
-          { id: 1, name: 'Dean\'s List', year: '2015, 2016, 2017', description: 'Recognized for outstanding academic achievement.' },
-        ],
-      },
-      es: { ...emptyCvDataTemplate } // Start Spanish with empty data
-    };
-
-
-    // Main App component for the CV Builder
-    const App = () => {
-      // State for current language (locale)
-      const [locale, setLocale] = React.useState('en');
-      const t = translations[locale]; // Shorthand for translations based on current locale
-
-      // State variables to hold CV data for both locales
-      const [cvDataByLocale, setCvDataByLocale] = React.useState(initialCvDataByLocale);
-
-      // Destructure current locale's CV data for easier access
-      const { personalInfo, summary, experiences, education, skills, projects, awards } = cvDataByLocale[locale];
-
-      // Ref for the CV content to be exported as PDF
-      const cvContentRef = React.useRef(null);
-      // Ref for the hidden file input
-      const fileInputRef = React.useRef(null);
-      // Ref for the image file input
-      const imageInputRef = React.useRef(null);
-
-      // State for custom message display
-      const [message, setMessage] = React.useState('');
-      const [isMessageVisible, setIsMessageVisible] = React.useState(false);
-      const [showConfirmModal, setShowConfirmModal] = React.useState(false);
-      const [confirmAction, setConfirmAction] = React.useState(null); // Function to execute on confirm
-
-      // Function to display custom messages
-      const showMessage = (msg) => {
-        setMessage(msg);
-        setIsMessageVisible(true);
-        setTimeout(() => {
-          setIsMessageVisible(false);
-          setMessage('');
-        }, 3000); // Message disappears after 3 seconds
-      };
-
-      // Generic update function for CV data based on current locale
-      const updateCvData = (section, id, field, value, index = null) => {
-        setCvDataByLocale(prev => {
-          const currentLocaleData = { ...prev[locale] };
-          if (section === 'personalInfo' || section === 'summary') {
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
-              }
-            };
-          } else if (Array.isArray(currentLocaleData[section])) {
-            const updatedArray = currentLocaleData[section].map(item => {
-              if (item.id === id) {
-                if (field === 'description' && index !== null) {
-                  const newDescription = [...item.description];
-                  newDescription[index] = value;
-                  return { ...item, description: newDescription };
-                }
-                return { ...item, [field]: value };
-              }
-              return item;
-            });
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                [section]: updatedArray
-              }
-            };
-          } else if (section === 'skills') {
-            const newSkills = { ...currentLocaleData.skills };
-            // The 'id' parameter is the category, and 'field' is the index
-            const newCategoryArray = [...newSkills[id]];
-            newCategoryArray[field] = value; // Use the 'field' parameter, which holds the index
-            newSkills[id] = newCategoryArray;
-            return {
-              ...prev,
-              [locale]: {
-                ...currentLocaleData,
-                skills: newSkills
-              }
-            };
-          }
-          return prev;
-        });
-      };
-
-      // Functions to handle adding/removing items in arrays
-      const addItem = (section, newItem) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            [section]: [...prev[locale][section], newItem]
-          }
-        }));
-      };
-
-      const removeItem = (section, idToRemove) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            [section]: prev[locale][section].filter(item => item.id !== idToRemove)
-          }
-        }));
-      };
-
-      // Specific handlers using the generic update/add/remove functions
-      const handlePersonalInfoChange = (e) => updateCvData('personalInfo', null, e.target.name, e.target.value);
-      const handleSummaryChange = (e) => updateCvData('summary', null, null, e.target.value);
-      const handleExperienceChange = (id, field, value, index = null) => updateCvData('experiences', id, field, value, index);
-      const addExperience = () => addItem('experiences', { id: experiences.length + 1, title: '', company: '', location: '', startDate: '', endDate: '', description: [''] });
-      const removeExperience = (id) => removeItem('experiences', id);
-      const addExperienceDescriptionLine = (id) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            experiences: prev[locale].experiences.map(exp =>
-              exp.id === id ? { ...exp, description: [...exp.description, ''] } : exp
-            )
-          }
-        }));
-      };
-      const removeExperienceDescriptionLine = (expId, descIndex) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            experiences: prev[locale].experiences.map(exp =>
-              exp.id === expId ? { ...exp, description: exp.description.filter((_, i) => i !== descIndex) } : exp
-            )
-          }
-        }));
-      };
-
-      const handleEducationChange = (id, field, value) => updateCvData('education', id, field, value);
-      const addEducation = () => addItem('education', { id: education.length + 1, degree: '', university: '', location: '', year: '', details: '' });
-      const removeEducation = (id) => removeItem('education', id);
-
-      const handleSkillsChange = (category, index, value) => updateCvData('skills', category, index, value);
-      const addSkill = (category) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            skills: {
-              ...prev[locale].skills,
-              [category]: [...prev[locale].skills[category], '']
-            }
-          }
-        }));
-      };
-      const removeSkill = (category, index) => {
-        setCvDataByLocale(prev => ({
-          ...prev,
-          [locale]: {
-            ...prev[locale],
-            skills: {
-              ...prev[locale].skills,
-              [category]: prev[locale].skills[category].filter((_, i) => i !== index)
-            }
-          }
-        }));
-      };
-
-      const handleProjectChange = (id, field, value) => updateCvData('projects', id, field, value);
-      const addProject = () => addItem('projects', { id: projects.length + 1, name: '', technologies: '', description: '', link: '' });
-      const removeProject = (id) => removeItem('projects', id);
-
-      const handleAwardChange = (id, field, value) => updateCvData('awards', id, field, value);
-      const addAward = () => addItem('awards', { id: awards.length + 1, name: '', year: '', description: '' });
-      const removeAward = (id) => removeItem('awards', id);
-
-      // Function to handle image file upload and crop to square
-      const handleImageUpload = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const img = new Image();
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const context = canvas.getContext('2d');
-
-              const size = Math.min(img.naturalWidth, img.naturalHeight); // Size of the square crop
-              const x = (img.naturalWidth - size) / 2; // X-coordinate to start crop
-              const y = (img.naturalHeight - size) / 2; // Y-coordinate to start crop
-
-              const displaySize = 150; // Desired size for display and PDF
-
-              canvas.width = displaySize;
-              canvas.height = displaySize;
-
-              // Draw the cropped portion of the image onto the canvas, scaled to displaySize
-              context.drawImage(img, x, y, size, size, 0, 0, displaySize, displaySize);
-
-              // Get the cropped image as a Base64 string
-              const croppedImageBase64 = canvas.toDataURL('image/png'); // Use PNG for better quality with transparency if needed
-
-              setCvDataByLocale(prev => ({
-                ...prev,
-                [locale]: {
-                  ...prev[locale],
-                  personalInfo: {
-                    ...prev[locale].personalInfo,
-                    profilePicture: croppedImageBase64,
-                    profilePictureWidth: displaySize, // Fixed width for square
-                    profilePictureHeight: displaySize, // Fixed height for square
-                  }
-                }
-              }));
-            };
-            img.src = reader.result;
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-
-      // Function to remove the profile picture
-      const removeProfilePicture = () => {
-        updateCvData('personalInfo', null, 'profilePicture', '');
-        updateCvData('personalInfo', null, 'profilePictureWidth', null);
-        updateCvData('personalInfo', null, 'profilePictureHeight', null);
-        if (imageInputRef.current) {
-          imageInputRef.current.value = ''; // Clear the file input
-        }
-      };
-
-      // Function to export CV to PDF
-      const exportToPdf = () => {
-        const element = cvContentRef.current;
-        if (element) {
-          // Load html2pdf.js dynamically
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = () => {
-            // Options for html2pdf
-            const options = {
-              margin: 0.5,
-              filename: `${cvDataByLocale[locale].personalInfo.name.replace(/\s/g, '_')}_CV_${locale.toUpperCase()}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true },
-              jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-            };
-            // Generate PDF
-            window.html2pdf().set(options).from(element).save();
-          };
-          document.body.appendChild(script);
-        }
-      };
-
-      // Function to save all CV data (both locales) to a JSON file
-      const saveCvToFile = () => {
-        try {
-          const jsonString = JSON.stringify(cvDataByLocale, null, 2); // Pretty print JSON
-          const blob = new Blob([jsonString], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `CV_Builder_Data.json`; // Generic filename as it contains all languages
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          showMessage(t.saveSuccess);
-        } catch (error) {
-          console.error("Error saving CV data to file:", error);
-          showMessage(t.saveError);
-        }
-      };
-
-      // Function to trigger file input click for import
-      const triggerImport = () => {
-        fileInputRef.current.click();
-      };
-
-      // Function to handle file selection and import CV data
-      const handleFileSelect = (event) => {
-        const file = event.target.files[0];
-        if (!file) {
-          showMessage(t.noFileSelected);
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const parsedData = JSON.parse(e.target.result);
-            // Validate if the imported data has the expected structure (en, es keys)
-            if (parsedData.en && parsedData.es) {
-              setCvDataByLocale(parsedData);
-              showMessage(t.loadSuccess);
-            } else {
-              showMessage(t.loadError); // Data structure invalid
-            }
-          } catch (error) {
-            console.error("Error parsing CV data file:", error);
-            showMessage(t.loadError);
-          } finally {
-            // Clear the file input value to allow re-importing the same file
-            event.target.value = null;
-          }
+    <script type="text/babel">
+        // Translation object for English and Spanish UI elements
+        const translations = {
+            en: {
+                cvBuilder: "CV Builder",
+                personalInformation: "Personal Information",
+                name: "Name",
+                title: "Title",
+                email: "Email",
+                phone: "Phone",
+                linkedin: "LinkedIn",
+                github: "GitHub",
+                website: "Website",
+                address: "Address",
+                profilePicture: "Profile Picture", // New translation
+                uploadImage: "Upload Image", // New translation
+                removeImage: "Remove Image", // New translation
+                summary: "Summary",
+                summaryPlaceholder: "A brief overview of your professional background and goals.",
+                workExperience: "Work Experience",
+                addExperience: "Add Experience",
+                removeExperience: "Remove Experience",
+                jobTitle: "Title",
+                company: "Company",
+                location: "Location",
+                startDate: "Start Date",
+                endDate: "End Date",
+                present: "Present",
+                responsibilitiesAchievements: "Responsibilities/Achievements",
+                addDescriptionLine: "Add Description Line",
+                removeLine: "Remove line",
+                education: "Education",
+                addEducation: "Add Education",
+                removeEducation: "Remove Education",
+                degree: "Degree",
+                university: "University",
+                year: "Year",
+                detailsOptional: "Details (Optional)",
+                detailsPlaceholder: "e.g., Graduated with honors, Relevant coursework...",
+                skills: "Skills",
+                programmingLanguages: "Programming Languages",
+                frameworks: "Frameworks",
+                databases: "Databases",
+                tools: "Tools",
+                addSkill: "Add Skill",
+                removeSkill: "Remove skill",
+                projects: "Projects",
+                addProject: "Add Project",
+                removeProject: "Remove Project",
+                projectName: "Project Name",
+                technologiesUsed: "Technologies Used",
+                projectDescription: "Description",
+                projectDescriptionPlaceholder: "Brief description of the project and your role.",
+                linkOptional: "Link (Optional)",
+                awardsCertifications: "Awards & Certifications",
+                addAwardCertification: "Add Award/Certification",
+                removeAward: "Remove Award",
+                awardName: "Name",
+                awardYear: "Year",
+                awardDescriptionOptional: "Description (Optional)",
+                awardDescriptionPlaceholder: "e.g., Awarded for excellence in...",
+                exportToPdf: "Export to PDF",
+                exportCvSession: "Export CV Data File",
+                importCvSession: "Import CV Data File",
+                cvPreview: "CV Preview",
+                saveSuccess: "CV data saved to file successfully!",
+                saveError: "Error saving CV data to file. Please try again.",
+                loadSuccess: "CV data loaded from file successfully!",
+                loadError: "Error loading CV data from file. The file might be corrupted or invalid.",
+                noFileSelected: "No file selected.",
+                language: "Language",
+                english: "English",
+                spanish: "Spanish",
+                newSession: "New Session",
+                newSessionConfirm: "Are you sure you want to start a new session? All unsaved data will be lost.",
+                newSessionStarted: "New session started. All data cleared.",
+            },
+            es: {
+                cvBuilder: "Constructor de CV",
+                personalInformation: "Información Personal",
+                name: "Nombre",
+                title: "Título",
+                email: "Correo Electrónico",
+                phone: "Teléfono",
+                linkedin: "LinkedIn",
+                github: "GitHub",
+                website: "Sitio Web",
+                address: "Dirección",
+                profilePicture: "Foto de Perfil", // New translation
+                uploadImage: "Subir Imagen", // New translation
+                removeImage: "Eliminar Imagen", // New translation
+                summary: "Resumen",
+                summaryPlaceholder: "Una breve descripción de su experiencia profesional y objetivos.",
+                workExperience: "Experiencia Laboral",
+                addExperience: "Añadir Experiencia",
+                removeExperience: "Eliminar Experiencia",
+                jobTitle: "Puesto",
+                company: "Empresa",
+                location: "Ubicación",
+                startDate: "Fecha de Inicio",
+                endDate: "Fecha de Fin",
+                present: "Actualidad",
+                responsibilitiesAchievements: "Responsabilidades/Logros",
+                addDescriptionLine: "Añadir Línea de Descripción",
+                removeLine: "Eliminar línea",
+                education: "Educación",
+                addEducation: "Añadir Educación",
+                removeEducation: "Eliminar Educación",
+                degree: "Título",
+                university: "Universidad",
+                year: "Año",
+                detailsOptional: "Detalles (Opcional)",
+                detailsPlaceholder: "Ej: Graduado con honores, Cursos relevantes...",
+                skills: "Habilidades",
+                programmingLanguages: "Lenguajes de Programación",
+                frameworks: "Frameworks",
+                databases: "Bases de Datos",
+                tools: "Herramientas",
+                addSkill: "Añadir Habilidad",
+                removeSkill: "Eliminar habilidad",
+                projects: "Proyectos",
+                addProject: "Añadir Proyecto",
+                removeProject: "Eliminar Proyecto",
+                projectName: "Nombre del Proyecto",
+                technologiesUsed: "Tecnologías Utilizadas",
+                projectDescription: "Descripción",
+                projectDescriptionPlaceholder: "Breve descripción del proyecto y su rol.",
+                linkOptional: "Enlace (Opcional)",
+                awardsCertifications: "Premios y Certificaciones",
+                addAwardCertification: "Añadir Premio/Certificación",
+                removeAward: "Eliminar Premio",
+                awardName: "Nombre",
+                awardYear: "Año",
+                awardDescriptionOptional: "Descripción (Opcional)",
+                awardDescriptionPlaceholder: "Ej: Galardonado por excelencia en...",
+                exportToPdf: "Exportar a PDF",
+                exportCvSession: "Exportar Archivo de Datos CV",
+                importCvSession: "Importar Archivo de Datos CV",
+                cvPreview: "Vista Previa del CV",
+                saveSuccess: "¡Datos del CV guardados en archivo correctamente!",
+                saveError: "Error al guardar los datos del CV en archivo. Inténtelo de nuevo.",
+                loadSuccess: "¡Datos del CV cargados desde archivo correctamente!",
+                loadError: "Error al cargar los datos del CV desde archivo. El archivo podría estar corrupto o no válido.",
+                noFileSelected: "Ningún archivo seleccionado.",
+                language: "Idioma",
+                english: "Inglés",
+                spanish: "Español",
+                newSession: "Nueva Sesión",
+                newSessionConfirm: "¿Está seguro de que desea iniciar una nueva sesión? Se perderán todos los datos no guardados.",
+                newSessionStarted: "Nueva sesión iniciada. Todos los datos borrados.",
+            },
         };
-        reader.onerror = (error) => {
-          console.error("Error reading CV data file:", error);
-          showMessage(t.loadError);
-          // Clear the file input value on error as well
-          event.target.value = null;
+
+        // Define a structure for an empty CV for a single locale
+        const emptyCvDataTemplate = {
+            personalInfo: {
+                name: '',
+                title: '',
+                email: '',
+                phone: '',
+                linkedin: '',
+                github: '',
+                website: '',
+                address: '',
+                profilePicture: '', // Added profile picture field
+                profilePictureWidth: null, // New: Store original image width for PDF
+                profilePictureHeight: null, // New: Store original image height for PDF
+            },
+            summary: '',
+            experiences: [],
+            education: [],
+            skills: {
+                programmingLanguages: [],
+                frameworks: [],
+                databases: [],
+                tools: [],
+            },
+            projects: [],
+            awards: [],
         };
-        reader.readAsText(file);
-      };
 
-      // Function to start a new, empty CV session
-      const startNewSession = () => {
-        // Show confirmation modal before clearing data
-        setShowConfirmModal(true);
-        setConfirmAction(() => () => {
-          // Reset all CV data for both locales to empty templates
-          setCvDataByLocale({
-            en: { ...emptyCvDataTemplate },
-            es: { ...emptyCvDataTemplate },
-          });
-          showMessage(t.newSessionStarted);
-          setShowConfirmModal(false); // Close modal after action
-        });
-      };
+        // Initial state for all CV data fields, structured by locale
+        const initialCvDataByLocale = {
+            en: {
+                personalInfo: {
+                    name: 'John Doe',
+                    title: 'Software Engineer',
+                    email: 'john.doe@example.com',
+                    phone: '123-456-7890',
+                    linkedin: 'linkedin.com/in/johndoe',
+                    github: 'github.com/johndoe',
+                    website: 'johndoe.com',
+                    address: 'Anytown, USA',
+                    profilePicture: 'https://placehold.co/150x150/aabbcc/ffffff?text=JD', // Placeholder image
+                    profilePictureWidth: 150, // Initial placeholder dimensions
+                    profilePictureHeight: 150, // Initial placeholder dimensions
+                },
+                summary: 'Highly motivated and results-oriented software engineer with 5+ years of experience in developing robust and scalable web applications. Proficient in JavaScript, React, Node.js, and various database technologies. Seeking to leverage my skills to contribute to innovative projects.',
+                experiences: [
+                    { id: 1, title: 'Senior Software Engineer', company: 'Tech Solutions Inc.', location: 'New York, NY', startDate: 'Jan 2022', endDate: 'Present', description: ['Led the development of a new microservices architecture, improving system scalability by 30%.', 'Implemented a real-time data processing pipeline using Kafka, reducing latency by 50%.', 'Mentored junior developers and conducted code reviews, ensuring high code quality.'] },
+                    { id: 2, title: 'Software Developer', company: 'Innovate Corp.', location: 'San Francisco, CA', startDate: 'Aug 2019', endDate: 'Dec 2021', description: ['Developed and maintained front-end components using React and Redux.', 'Collaborated with product managers to translate requirements into technical specifications.', 'Optimized database queries, leading to a 20% improvement in application performance.'] },
+                ],
+                education: [
+                    { id: 1, degree: 'M.S. in Computer Science', university: 'State University', location: 'Anytown, USA', year: '2019', details: 'Specialization in Artificial Intelligence and Machine Learning.' },
+                    { id: 2, degree: 'B.S. in Software Engineering', university: 'City College', location: 'Anytown, USA', year: '2017', details: 'Graduated with honors.' },
+                ],
+                skills: { programmingLanguages: ['JavaScript', 'Python', 'Java', 'C++'], frameworks: ['React', 'Node.js', 'Express.js', 'Django', 'Spring Boot'], databases: ['MongoDB', 'PostgreSQL', 'MySQL'], tools: ['Git', 'Docker', 'Kubernetes', 'Jira', 'AWS'] },
+                projects: [
+                    { id: 1, name: 'E-commerce Platform', technologies: 'React, Node.js, MongoDB, Stripe API', description: 'Developed a full-stack e-commerce platform with user authentication, product catalog, shopping cart, and payment gateway integration.', link: 'github.com/johndoe/ecommerce-platform' },
+                ],
+                awards: [
+                    { id: 1, name: 'Dean\'s List', year: '2015, 2016, 2017', description: 'Recognized for outstanding academic achievement.' },
+                ],
+            },
+            es: {
+                personalInfo: {
+                    name: 'Juan Pérez',
+                    title: 'Ingeniero de Software',
+                    email: 'juan.perez@ejemplo.com',
+                    phone: '123-456-7890',
+                    linkedin: 'linkedin.com/in/juanperez',
+                    github: 'github.com/juanperez',
+                    website: 'juanperez.com',
+                    address: 'Cualquier ciudad, México',
+                    profilePicture: 'https://placehold.co/150x150/aabbcc/ffffff?text=JP',
+                    profilePictureWidth: 150,
+                    profilePictureHeight: 150,
+                },
+                summary: 'Ingeniero de software altamente motivado y orientado a resultados con más de 5 años de experiencia en el desarrollo de aplicaciones web robustas y escalables. Dominio de JavaScript, React, Node.js y diversas tecnologías de bases de datos. Busco aprovechar mis habilidades para contribuir a proyectos innovadores.',
+                experiences: [
+                    {
+                        id: 1,
+                        title: 'Ingeniero de Software Senior',
+                        company: 'Soluciones Tecnológicas Inc.',
+                        location: 'Nueva York, NY',
+                        startDate: 'Ene 2022',
+                        endDate: 'Actualidad',
+                        description: [
+                            'Lideré el desarrollo de una nueva arquitectura de microservicios, mejorando la escalabilidad del sistema en un 30%.',
+                            'Implementé un pipeline de procesamiento de datos en tiempo real usando Kafka, reduciendo la latencia en un 50%.',
+                            'Mentoricé a desarrolladores junior y realicé revisiones de código, garantizando una alta calidad del mismo.'
+                        ]
+                    },
+                    {
+                        id: 2,
+                        title: 'Desarrollador de Software',
+                        company: 'Innovate Corp.',
+                        location: 'San Francisco, CA',
+                        startDate: 'Ago 2019',
+                        endDate: 'Dic 2021',
+                        description: [
+                            'Desarrollé y mantuve componentes de front-end utilizando React y Redux.',
+                            'Colaboré con gerentes de producto para traducir requisitos en especificaciones técnicas.',
+                            'Optimicé consultas de bases de datos, lo que resultó en una mejora del 20% en el rendimiento de la aplicación.'
+                        ]
+                    },
+                ],
+                education: [
+                    {
+                        id: 1,
+                        degree: 'M.S. en Ciencias de la Computación',
+                        university: 'Universidad Estatal',
+                        location: 'Cualquier ciudad, México',
+                        year: '2019',
+                        details: 'Especialización en Inteligencia Artificial y Aprendizaje Automático.'
+                    },
+                    {
+                        id: 2,
+                        degree: 'B.S. en Ingeniería de Software',
+                        university: 'Colegio de la Ciudad',
+                        location: 'Cualquier ciudad, México',
+                        year: '2017',
+                        details: 'Graduado con honores.'
+                    },
+                ],
+                skills: {
+                    programmingLanguages: ['JavaScript', 'Python', 'Java', 'C++'],
+                    frameworks: ['React', 'Node.js', 'Express.js', 'Django', 'Spring Boot'],
+                    databases: ['MongoDB', 'PostgreSQL', 'MySQL'],
+                    tools: ['Git', 'Docker', 'Kubernetes', 'Jira', 'AWS'],
+                },
+                projects: [
+                    {
+                        id: 1,
+                        name: 'Plataforma de Comercio Electrónico',
+                        technologies: 'React, Node.js, MongoDB, API de Stripe',
+                        description: 'Desarrollé una plataforma de comercio electrónico full-stack con autenticación de usuarios, catálogo de productos, carrito de compras e integración de pasarela de pago.',
+                        link: 'github.com/juanperez/ecommerce-platform'
+                    },
+                ],
+                awards: [
+                    {
+                        id: 1,
+                        name: 'Lista del Decano',
+                        year: '2015, 2016, 2017',
+                        description: 'Reconocido por logros académicos sobresalientes.'
+                    },
+                ],
+            }
+        };
 
-      const handleConfirm = () => {
-        if (confirmAction) {
-          confirmAction();
-        }
-      };
 
-      const handleCancel = () => {
-        setShowConfirmModal(false);
-        setConfirmAction(null);
-      };
+        // Main App component for the CV Builder
+        const App = () => {
+            // State for current language (locale)
+            const [locale, setLocale] = React.useState('en');
+            const t = translations[locale]; // Shorthand for translations based on current locale
+
+            // State variables to hold CV data for both locales
+            const [cvDataByLocale, setCvDataByLocale] = React.useState(initialCvDataByLocale);
+
+            // Destructure current locale's CV data for easier access
+            const { personalInfo, summary, experiences, education, skills, projects, awards } = cvDataByLocale[locale];
+
+            // Ref for the CV content to be exported as PDF
+            const cvContentRef = React.useRef(null);
+            // Ref for the hidden file input
+            const fileInputRef = React.useRef(null);
+            // Ref for the image file input
+            const imageInputRef = React.useRef(null);
+
+            // State for custom message display
+            const [message, setMessage] = React.useState('');
+            const [isMessageVisible, setIsMessageVisible] = React.useState(false);
+            const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+            const [confirmAction, setConfirmAction] = React.useState(null); // Function to execute on confirm
+
+            // Function to display custom messages
+            const showMessage = (msg) => {
+                setMessage(msg);
+                setIsMessageVisible(true);
+                setTimeout(() => {
+                    setIsMessageVisible(false);
+                    setMessage('');
+                }, 3000); // Message disappears after 3 seconds
+            };
+
+            // Generic update function for CV data based on current locale
+            const updateCvData = (section, id, field, value, index = null) => {
+                setCvDataByLocale(prev => {
+                    const currentLocaleData = { ...prev[locale] };
+                    if (section === 'personalInfo' || section === 'summary') {
+                        return {
+                            ...prev,
+                            [locale]: {
+                                ...currentLocaleData,
+                                [section]: section === 'summary' ? value : { ...currentLocaleData[section], [field]: value }
+                            }
+                        };
+                    } else if (Array.isArray(currentLocaleData[section])) {
+                        const updatedArray = currentLocaleData[section].map(item => {
+                            if (item.id === id) {
+                                if (field === 'description' && index !== null) {
+                                    const newDescription = [...item.description];
+                                    newDescription[index] = value;
+                                    return { ...item, description: newDescription };
+                                }
+                                return { ...item, [field]: value };
+                            }
+                            return item;
+                        });
+                        return {
+                            ...prev,
+                            [locale]: {
+                                ...currentLocaleData,
+                                [section]: updatedArray
+                            }
+                        };
+                    } else if (section === 'skills') {
+                        const newSkills = { ...currentLocaleData.skills };
+                        // The 'id' parameter is the category, and 'field' is the index
+                        const newCategoryArray = [...newSkills[id]];
+                        newCategoryArray[field] = value; // Use the 'field' parameter, which holds the index
+                        newSkills[id] = newCategoryArray;
+                        return {
+                            ...prev,
+                            [locale]: {
+                                ...currentLocaleData,
+                                skills: newSkills
+                            }
+                        };
+                    }
+                    return prev;
+                });
+            };
+
+            // Functions to handle adding/removing items in arrays
+            const addItem = (section, newItem) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        [section]: [...prev[locale][section], newItem]
+                    }
+                }));
+            };
+
+            const removeItem = (section, idToRemove) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        [section]: prev[locale][section].filter(item => item.id !== idToRemove)
+                    }
+                }));
+            };
+
+            // Specific handlers using the generic update/add/remove functions
+            const handlePersonalInfoChange = (e) => updateCvData('personalInfo', null, e.target.name, e.target.value);
+            const handleSummaryChange = (e) => updateCvData('summary', null, null, e.target.value);
+            const handleExperienceChange = (id, field, value, index = null) => updateCvData('experiences', id, field, value, index);
+            const addExperience = () => addItem('experiences', { id: experiences.length + 1, title: '', company: '', location: '', startDate: '', endDate: '', description: [''] });
+            const removeExperience = (id) => removeItem('experiences', id);
+            const addExperienceDescriptionLine = (id) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        experiences: prev[locale].experiences.map(exp =>
+                            exp.id === id ? { ...exp, description: [...exp.description, ''] } : exp
+                        )
+                    }
+                }));
+            };
+            const removeExperienceDescriptionLine = (expId, descIndex) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        experiences: prev[locale].experiences.map(exp =>
+                            exp.id === expId ? { ...exp, description: exp.description.filter((_, i) => i !== descIndex) } : exp
+                        )
+                    }
+                }));
+            };
+
+            const handleEducationChange = (id, field, value) => updateCvData('education', id, field, value);
+            const addEducation = () => addItem('education', { id: education.length + 1, degree: '', university: '', location: '', year: '', details: '' });
+            const removeEducation = (id) => removeItem('education', id);
+
+            const handleSkillsChange = (category, index, value) => updateCvData('skills', category, index, value);
+            const addSkill = (category) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        skills: {
+                            ...prev[locale].skills,
+                            [category]: [...prev[locale].skills[category], '']
+                        }
+                    }
+                }));
+            };
+            const removeSkill = (category, index) => {
+                setCvDataByLocale(prev => ({
+                    ...prev,
+                    [locale]: {
+                        ...prev[locale],
+                        skills: {
+                            ...prev[locale].skills,
+                            [category]: prev[locale].skills[category].filter((_, i) => i !== index)
+                        }
+                    }
+                }));
+            };
+
+            const handleProjectChange = (id, field, value) => updateCvData('projects', id, field, value);
+            const addProject = () => addItem('projects', { id: projects.length + 1, name: '', technologies: '', description: '', link: '' });
+            const removeProject = (id) => removeItem('projects', id);
+
+            const handleAwardChange = (id, field, value) => updateCvData('awards', id, field, value);
+            const addAward = () => addItem('awards', { id: awards.length + 1, name: '', year: '', description: '' });
+            const removeAward = (id) => removeItem('awards', id);
+
+            // Function to handle image file upload and crop to square
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+
+                            const size = Math.min(img.naturalWidth, img.naturalHeight); // Size of the square crop
+                            const x = (img.naturalWidth - size) / 2; // X-coordinate to start crop
+                            const y = (img.naturalHeight - size) / 2; // Y-coordinate to start crop
+
+                            const displaySize = 150; // Desired size for display and PDF
+
+                            canvas.width = displaySize;
+                            canvas.height = displaySize;
+
+                            // Draw the cropped portion of the image onto the canvas, scaled to displaySize
+                            context.drawImage(img, x, y, size, size, 0, 0, displaySize, displaySize);
+
+                            // Get the cropped image as a Base64 string
+                            const croppedImageBase64 = canvas.toDataURL('image/png'); // Use PNG for better quality with transparency if needed
+
+                            setCvDataByLocale(prev => ({
+                                ...prev,
+                                [locale]: {
+                                    ...prev[locale],
+                                    personalInfo: {
+                                        ...prev[locale].personalInfo,
+                                        profilePicture: croppedImageBase64,
+                                        profilePictureWidth: displaySize, // Fixed width for square
+                                        profilePictureHeight: displaySize, // Fixed height for square
+                                    }
+                                }
+                            }));
+                        };
+                        img.src = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // Function to remove the profile picture
+            const removeProfilePicture = () => {
+                updateCvData('personalInfo', null, 'profilePicture', '');
+                updateCvData('personalInfo', null, 'profilePictureWidth', null);
+                updateCvData('personalInfo', null, 'profilePictureHeight', null);
+                if (imageInputRef.current) {
+                    imageInputRef.current.value = ''; // Clear the file input
+                }
+            };
+
+            // Function to export CV to PDF
+            const exportToPdf = () => {
+                const element = cvContentRef.current;
+                if (element) {
+                    // Load html2pdf.js dynamically
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                    script.onload = () => {
+                        // Options for html2pdf
+                        const options = {
+                            margin: 0.5,
+                            filename: `${cvDataByLocale[locale].personalInfo.name.replace(/\s/g, '_')}_CV_${locale.toUpperCase()}.pdf`,
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2, useCORS: true },
+                            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                        };
+                        // Generate PDF
+                        window.html2pdf().set(options).from(element).save();
+                    };
+                    document.body.appendChild(script);
+                }
+            };
+
+            // Function to save all CV data (both locales) to a JSON file
+            const saveCvToFile = () => {
+                try {
+                    const jsonString = JSON.stringify(cvDataByLocale, null, 2); // Pretty print JSON
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+
+                    // Get the name from the current locale's state.
+                    const userName = cvDataByLocale[locale].personalInfo.name || 'CV_User';
+
+                    // Sanitize the name to be safe for a filename (replace spaces with underscores, etc.)
+                    const sanitizedName = userName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+                    // Construct the new filename
+                    a.download = `${sanitizedName}_cv_data.json`;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage(t.saveSuccess);
+                } catch (error) {
+                    console.error("Error saving CV data to file:", error);
+                    showMessage(t.saveError);
+                }
+            };
+
+            // Function to trigger file input click for import
+            const triggerImport = () => {
+                fileInputRef.current.click();
+            };
+
+            // Function to handle file selection and import CV data
+            const handleFileSelect = (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    showMessage(t.noFileSelected);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        // Validate if the imported data has the expected structure (en, es keys)
+                        if (parsedData.en && parsedData.es) {
+                            setCvDataByLocale(parsedData);
+                            showMessage(t.loadSuccess);
+                        } else {
+                            showMessage(t.loadError); // Data structure invalid
+                        }
+                    } catch (error) {
+                        console.error("Error parsing CV data file:", error);
+                        showMessage(t.loadError);
+                    } finally {
+                        // Clear the file input value to allow re-importing the same file
+                        event.target.value = null;
+                    }
+                };
+                reader.onerror = (error) => {
+                    console.error("Error reading CV data file:", error);
+                    showMessage(t.loadError);
+                    // Clear the file input value on error as well
+                    event.target.value = null;
+                };
+                reader.readAsText(file);
+            };
+
+            // Function to start a new, empty CV session
+            const startNewSession = () => {
+                // Show confirmation modal before clearing data
+                setShowConfirmModal(true);
+                setConfirmAction(() => () => {
+                    // Reset all CV data for both locales to empty templates
+                    setCvDataByLocale({
+                        en: { ...emptyCvDataTemplate },
+                        es: { ...emptyCvDataTemplate },
+                    });
+                    showMessage(t.newSessionStarted);
+                    setShowConfirmModal(false); // Close modal after action
+                });
+            };
+
+            const handleConfirm = () => {
+                if (confirmAction) {
+                    confirmAction();
+                }
+            };
+
+            const handleCancel = () => {
+                setShowConfirmModal(false);
+                setConfirmAction(null);
+            };
 
 
-      return (
-        <div className="min-h-screen bg-gray-100 p-4 font-inter">
-          {/* Custom Message Modal */}
-          {isMessageVisible && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-xl text-center">
-                <p className="text-lg font-semibold text-gray-800">{message}</p>
-              </div>
-            </div>
-          )}
+            return (
+                <div className="min-h-screen bg-gray-100 p-4 font-inter">
+                    {/* Custom Message Modal */}
+                    {isMessageVisible && (
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+                                <p className="text-lg font-semibold text-gray-800">{message}</p>
+                            </div>
+                        </div>
+                    )}
 
-          {/* Confirmation Modal */}
-          {showConfirmModal && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
-                <p className="text-lg font-semibold text-gray-800 mb-4">{t.newSessionConfirm}</p>
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={handleConfirm}
-                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
-                  >
-                    No
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+                    {/* Confirmation Modal */}
+                    {showConfirmModal && (
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+                                <p className="text-lg font-semibold text-gray-800 mb-4">{t.newSessionConfirm}</p>
+                                <div className="flex justify-center space-x-4">
+                                    <button
+                                        onClick={handleConfirm}
+                                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                                    >
+                                        Yes
+                                    </button>
+                                    <button
+                                        onClick={handleCancel}
+                                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+                                    >
+                                        No
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-          <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden md:flex">
-            {/* Input Form Section */}
-            <div className="w-full md:w-1/2 p-6 bg-gray-50 border-r border-gray-200 overflow-y-auto max-h-[calc(100vh-2rem)]">
-              {/* Top Controls */}
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
-                <h1 className="text-3xl font-bold text-gray-800 text-center sm:text-left flex-grow">{t.cvBuilder}</h1>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setLocale('en')}
-                    className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-                  >
-                    {t.english}
-                  </button>
-                  <button
-                    onClick={() => setLocale('es')}
-                    className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'es' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-                  >
-                    {t.spanish}
-                  </button>
-                  <button
-                    onClick={startNewSession}
-                    className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-md w-full sm:w-auto"
-                  >
-                    {t.newSession}
-                  </button>
-                </div>
-              </div>
+                    <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden md:flex">
+                        {/* Input Form Section */}
+                        <div className="w-full md:w-1/2 p-6 bg-gray-50 border-r border-gray-200 overflow-y-auto max-h-[calc(100vh-2rem)]">
+                            {/* Top Controls */}
+                            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
+                                <h1 className="text-3xl font-bold text-gray-800 text-center sm:text-left flex-grow">{t.cvBuilder}</h1>
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => setLocale('en')}
+                                        className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                    >
+                                        {t.english}
+                                    </button>
+                                    <button
+                                        onClick={() => setLocale('es')}
+                                        className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'es' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                    >
+                                        {t.spanish}
+                                    </button>
+                                    <button
+                                        onClick={startNewSession}
+                                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-md w-full sm:w-auto"
+                                    >
+                                        {t.newSession}
+                                    </button>
+                                </div>
+                            </div>
 
-              {/* Personal Information */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.personalInformation}</h2>
-                {Object.keys(personalInfo).filter(key => key !== 'profilePicture' && key !== 'profilePictureWidth' && key !== 'profilePictureHeight').map((key) => ( // Exclude picture fields
-                  <div className="mb-3" key={key}>
-                    <label htmlFor={key} className="block text-sm font-medium text-gray-700">
-                      {t[key]}: {/* Use translation for label */}
-                    </label>
-                    <input
-                      type="text"
-                      id={key}
-                      name={key}
-                      value={personalInfo[key]}
-                      onChange={handlePersonalInfoChange}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </div>
-                ))}
-                {/* Profile Picture Input */}
-                <div className="mb-3">
-                  <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700">
-                    {t.profilePicture}:
-                  </label>
-                  <div className="flex items-center mt-1 space-x-3">
-                    <input
-                      type="file"
-                      id="profilePicture"
-                      ref={imageInputRef}
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="block w-full text-sm text-gray-500
+                            {/* Personal Information */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.personalInformation}</h2>
+                                {Object.keys(personalInfo).filter(key => key !== 'profilePicture' && key !== 'profilePictureWidth' && key !== 'profilePictureHeight').map((key) => ( // Exclude picture fields
+                                    <div className="mb-3" key={key}>
+                                        <label htmlFor={key} className="block text-sm font-medium text-gray-700">
+                                            {t[key]}: {/* Use translation for label */}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id={key}
+                                            name={key}
+                                            value={personalInfo[key]}
+                                            onChange={handlePersonalInfoChange}
+                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        />
+                                    </div>
+                                ))}
+                                {/* Profile Picture Input */}
+                                <div className="mb-3">
+                                    <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700">
+                                        {t.profilePicture}:
+                                    </label>
+                                    <div className="flex items-center mt-1 space-x-3">
+                                        <input
+                                            type="file"
+                                            id="profilePicture"
+                                            ref={imageInputRef}
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="block w-full text-sm text-gray-500
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-md file:border-0
                         file:text-sm file:font-semibold
                         file:bg-blue-50 file:text-blue-700
                         hover:file:bg-blue-100"
-                    />
-                    {personalInfo.profilePicture && (
-                      <button
-                        onClick={removeProfilePicture}
-                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        title={t.removeImage}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {personalInfo.profilePicture && (
-                    <div className="mt-4 text-center">
-                      <img
-                        src={personalInfo.profilePicture}
-                        alt="Profile Preview"
-                        className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-gray-300 shadow-md"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Summary */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.summary}</h2>
-                <textarea
-                  value={summary}
-                  onChange={handleSummaryChange}
-                  rows="5"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder={t.summaryPlaceholder}
-                ></textarea>
-              </div>
-
-              {/* Work Experience */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.workExperience}</h2>
-                {experiences.map((exp) => {
-                  return (
-                    <div key={exp.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
-                      <button
-                        onClick={() => removeExperience(exp.id)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        title={t.removeExperience}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.jobTitle}:</label>
-                        <input
-                          type="text"
-                          value={exp.title}
-                          onChange={(e) => handleExperienceChange(exp.id, 'title', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.company}:</label>
-                        <input
-                          type="text"
-                          value={exp.company}
-                          onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.location}:</label>
-                        <input
-                          type="text"
-                          value={exp.location}
-                          onChange={(e) => handleExperienceChange(exp.id, 'location', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">{t.startDate}:</label>
-                          <input
-                            type="text"
-                            value={exp.startDate}
-                            onChange={(e) => handleExperienceChange(exp.id, 'startDate', e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">{t.endDate}:</label>
-                          <input
-                            type="text"
-                            value={exp.endDate}
-                            onChange={(e) => handleExperienceChange(exp.id, 'endDate', e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.responsibilitiesAchievements}:</label>
-                        {exp.description.map((desc, index) => {
-                          return (
-                            <div key={index} className="flex items-center mt-1">
-                              <textarea
-                                value={desc}
-                                onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value, index)}
-                                rows="2"
-                                className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mr-2"
-                                placeholder={t.responsibilitiesAchievementsPlaceholder}
-                              ></textarea>
-                              <button
-                                onClick={() => removeExperienceDescriptionLine(exp.id, index)}
-                                className="p-1 bg-red-400 text-white rounded-full hover:bg-red-500 transition-colors"
-                                title={t.removeLine}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                                </svg>
-                              </button>
+                                        />
+                                        {personalInfo.profilePicture && (
+                                            <button
+                                                onClick={removeProfilePicture}
+                                                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                title={t.removeImage}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                    {personalInfo.profilePicture && (
+                                        <div className="mt-4 text-center">
+                                            <img
+                                                src={personalInfo.profilePicture}
+                                                alt="Profile Preview"
+                                                className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-gray-300 shadow-md"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                          );
-                        })}
-                        <button
-                          onClick={() => addExperienceDescriptionLine(exp.id)}
-                          className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-                        >
-                          {t.addDescriptionLine}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={addExperience}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
-                >
-                  {t.addExperience}
-                </button>
-              </div>
 
-              {/* Education */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.education}</h2>
-                {education.map((edu) => {
-                  return (
-                    <div key={edu.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
-                      <button
-                        onClick={() => removeEducation(edu.id)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        title={t.removeEducation}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.degree}:</label>
-                        <input
-                          type="text"
-                          value={edu.degree}
-                          onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.university}:</label>
-                        <input
-                          type="text"
-                          value={edu.university}
-                          onChange={(e) => handleEducationChange(edu.id, 'university', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">{t.location}:</label>
-                          <input
-                            type="text"
-                            value={edu.location}
-                            onChange={(e) => handleEducationChange(edu.id, 'location', e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
+                            {/* Summary */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.summary}</h2>
+                                <textarea
+                                    value={summary}
+                                    onChange={handleSummaryChange}
+                                    rows="5"
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder={t.summaryPlaceholder}
+                                ></textarea>
+                            </div>
+
+                            {/* Work Experience */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.workExperience}</h2>
+                                {experiences.map((exp) => {
+                                    return (
+                                        <div key={exp.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
+                                            <button
+                                                onClick={() => removeExperience(exp.id)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                title={t.removeExperience}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.jobTitle}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={exp.title}
+                                                    onChange={(e) => handleExperienceChange(exp.id, 'title', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.company}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={exp.company}
+                                                    onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.location}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={exp.location}
+                                                    onChange={(e) => handleExperienceChange(exp.id, 'location', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 mb-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">{t.startDate}:</label>
+                                                    <input
+                                                        type="text"
+                                                        value={exp.startDate}
+                                                        onChange={(e) => handleExperienceChange(exp.id, 'startDate', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">{t.endDate}:</label>
+                                                    <input
+                                                        type="text"
+                                                        value={exp.endDate}
+                                                        onChange={(e) => handleExperienceChange(exp.id, 'endDate', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.responsibilitiesAchievements}:</label>
+                                                {exp.description.map((desc, index) => {
+                                                    return (
+                                                        <div key={index} className="flex items-center mt-1">
+                                                            <textarea
+                                                                value={desc}
+                                                                onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value, index)}
+                                                                rows="2"
+                                                                className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mr-2"
+                                                                placeholder={t.responsibilitiesAchievementsPlaceholder}
+                                                            ></textarea>
+                                                            <button
+                                                                onClick={() => removeExperienceDescriptionLine(exp.id, index)}
+                                                                className="p-1 bg-red-400 text-white rounded-full hover:bg-red-500 transition-colors"
+                                                                title={t.removeLine}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <button
+                                                    onClick={() => addExperienceDescriptionLine(exp.id)}
+                                                    className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                                                >
+                                                    {t.addDescriptionLine}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <button
+                                    onClick={addExperience}
+                                    className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
+                                >
+                                    {t.addExperience}
+                                </button>
+                            </div>
+
+                            {/* Education */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.education}</h2>
+                                {education.map((edu) => {
+                                    return (
+                                        <div key={edu.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
+                                            <button
+                                                onClick={() => removeEducation(edu.id)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                title={t.removeEducation}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.degree}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={edu.degree}
+                                                    onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.university}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={edu.university}
+                                                    onChange={(e) => handleEducationChange(edu.id, 'university', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 mb-3">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">{t.location}:</label>
+                                                    <input
+                                                        type="text"
+                                                        value={edu.location}
+                                                        onChange={(e) => handleEducationChange(edu.id, 'location', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">{t.year}:</label>
+                                                    <input
+                                                        type="text"
+                                                        value={edu.year}
+                                                        onChange={(e) => handleEducationChange(edu.id, 'year', e.target.value)}
+                                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.detailsOptional}:</label>
+                                                <textarea
+                                                    value={edu.details}
+                                                    onChange={(e) => handleEducationChange(edu.id, 'details', e.target.value)}
+                                                    rows="2"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    placeholder={t.detailsPlaceholder}
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <button
+                                    onClick={addEducation}
+                                    className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
+                                >
+                                    {t.addEducation}
+                                </button>
+                            </div>
+
+                            {/* Skills */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.skills}</h2>
+                                {Object.keys(skills).map((category) => {
+                                    return (
+                                        <div key={category} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                                            <h3 className="text-lg font-medium text-gray-700 mb-3">{t[category]}:</h3>
+                                            {skills[category].map((skill, index) => {
+                                                return (
+                                                    <div key={index} className="flex items-center mb-2">
+                                                        <input
+                                                            type="text"
+                                                            value={skill}
+                                                            onChange={(e) => handleSkillsChange(category, index, e.target.value)}
+                                                            className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mr-2"
+                                                        />
+                                                        <button
+                                                            onClick={() => removeSkill(category, index)}
+                                                            className="p-1 bg-red-400 text-white rounded-full hover:bg-red-500 transition-colors"
+                                                            title={t.removeSkill}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                            <button
+                                                onClick={() => addSkill(category)}
+                                                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                {t.addSkill}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Projects */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.projects}</h2>
+                                {projects.map((proj) => {
+                                    return (
+                                        <div key={proj.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
+                                            <button
+                                                onClick={() => removeProject(proj.id)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                title={t.removeProject}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.projectName}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={proj.name}
+                                                    onChange={(e) => handleProjectChange(proj.id, 'name', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.technologiesUsed}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={proj.technologies}
+                                                    onChange={(e) => handleProjectChange(proj.id, 'technologies', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.projectDescription}:</label>
+                                                <textarea
+                                                    value={proj.description}
+                                                    onChange={(e) => handleProjectChange(proj.id, 'description', e.target.value)}
+                                                    rows="3"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    placeholder={t.projectDescriptionPlaceholder}
+                                                ></textarea>
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.linkOptional}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={proj.link}
+                                                    onChange={(e) => handleProjectChange(proj.id, 'link', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <button
+                                    onClick={addProject}
+                                    className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
+                                >
+                                    {t.addProject}
+                                </button>
+                            </div>
+
+                            {/* Awards/Certifications */}
+                            <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
+                                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.awardsCertifications}</h2>
+                                {awards.map((award) => {
+                                    return (
+                                        <div key={award.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
+                                            <button
+                                                onClick={() => removeAward(award.id)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                title={t.removeAward}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.awardName}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={award.name}
+                                                    onChange={(e) => handleAwardChange(award.id, 'name', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.awardYear}:</label>
+                                                <input
+                                                    type="text"
+                                                    value={award.year}
+                                                    onChange={(e) => handleAwardChange(award.id, 'year', e.target.value)}
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                />
+                                            </div>
+                                            <div className="mb-3">
+                                                <label className="block text-sm font-medium text-gray-700">{t.awardDescriptionOptional}:</label>
+                                                <textarea
+                                                    value={award.description}
+                                                    onChange={(e) => handleAwardChange(award.id, 'description', e.target.value)}
+                                                    rows="2"
+                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                    placeholder={t.awardDescriptionPlaceholder}
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <button
+                                    onClick={addAward}
+                                    className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
+                                >
+                                    {t.addAwardCertification}
+                                </button>
+                            </div>
+
+                            {/* Bottom Controls */}
+                            <div className="mt-8 flex flex-col space-y-4">
+                                <button
+                                    onClick={exportToPdf}
+                                    className="w-full px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>{t.exportToPdf}</span>
+                                </button>
+                                <button
+                                    onClick={saveCvToFile}
+                                    className="w-full px-6 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0-8V4m0 8h.01M12 4a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2V6a2 2 0 00-2-2h-4z" />
+                                    </svg>
+                                    <span>{t.exportCvSession}</span>
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileSelect}
+                                    accept=".json" // Only accept JSON files
+                                />
+                                <button
+                                    onClick={triggerImport}
+                                    className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>{t.importCvSession}</span>
+                                </button>
+                            </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">{t.year}:</label>
-                          <input
-                            type="text"
-                            value={edu.year}
-                            onChange={(e) => handleEducationChange(edu.id, 'year', e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
+
+                        {/* CV Preview Section */}
+                        <div className="w-full md:w-1/2 p-6 bg-white overflow-y-auto max-h-[calc(100vh-2rem)]">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t.cvPreview}</h2>
+                            <div ref={cvContentRef} className="cv-document p-8 bg-white shadow-lg rounded-lg">
+                                {/* Personal Information */}
+                                <div className="text-center mb-6">
+                                    {personalInfo.profilePicture && (
+                                        <div className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-blue-200 shadow-lg overflow-hidden flex items-center justify-center"> {/* Added flex for centering */}
+                                            <img
+                                                src={personalInfo.profilePicture}
+                                                alt="Profile"
+                                                // Use explicitly calculated dimensions for PDF export reliability
+                                                width={personalInfo.profilePictureWidth || 150}
+                                                height={personalInfo.profilePictureHeight || 150}
+                                                style={{ objectFit: 'cover' }} // Keep object-fit for visual consistency in browser
+                                            />
+                                        </div>
+                                    )}
+                                    <h1 className="text-4xl font-bold text-gray-900 mb-1">{personalInfo.name}</h1>
+                                    <p className="text-xl text-gray-700 mb-3">{personalInfo.title}</p>
+                                    <div className="flex flex-wrap justify-center text-gray-600 text-sm">
+                                        {personalInfo.email && <span className="mx-2">{personalInfo.email}</span>}
+                                        {personalInfo.phone && <span className="mx-2">{personalInfo.phone}</span>}
+                                        {personalInfo.linkedin && <a href={`https://${personalInfo.linkedin}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.linkedin}</a>}
+                                        {personalInfo.github && <a href={`https://${personalInfo.github}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.github}</a>}
+                                        {personalInfo.website && <a href={`https://${personalInfo.website}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.website}</a>}
+                                        {personalInfo.address && <span className="mx-2">{personalInfo.address}</span>}
+                                    </div>
+                                </div>
+
+                                {/* Summary */}
+                                {summary && (
+                                    <div className="mb-6 no-break-inside">
+                                        <h3 className="text-lg cv-section-title">{t.summary}</h3>
+                                        <p className="text-gray-700 leading-relaxed">{summary}</p>
+                                    </div>
+                                )}
+
+                                {/* Work Experience */}
+                                {experiences.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg cv-section-title">{t.workExperience}</h3>
+                                        {experiences.map((exp) => {
+                                            return (
+                                                <div key={exp.id} className="mb-4 no-break-inside">
+                                                    <h4 className="cv-item-title text-md">{exp.title}</h4>
+                                                    <p className="cv-item-subtitle text-sm">{exp.company} | {exp.location}</p>
+                                                    <p className="cv-item-dates text-xs mb-2">{exp.startDate} - {exp.endDate === 'Present' ? t.present : exp.endDate}</p>
+                                                    <ul className="cv-description-list text-sm">
+                                                        {exp.description.filter(Boolean).map((desc, index) => {
+                                                            return (
+                                                                <li key={index}>{desc}</li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Education */}
+                                {education.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg cv-section-title">{t.education}</h3>
+                                        {education.map((edu) => {
+                                            return (
+                                                <div key={edu.id} className="mb-4 no-break-inside">
+                                                    <h4 className="cv-item-title text-md">{edu.degree}</h4>
+                                                    <p className="cv-item-subtitle text-sm">{edu.university} | {edu.location}</p>
+                                                    <p className="cv-item-dates text-xs mb-2">{edu.year}</p>
+                                                    {edu.details && <p className="text-gray-700 text-sm">{edu.details}</p>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Skills */}
+                                {Object.values(skills).some(arr => arr.length > 0 && arr.some(Boolean)) && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg cv-section-title">{t.skills}</h3>
+                                        {Object.keys(skills).map((category) => {
+                                            return (
+                                                <div key={category} className="mb-4">
+                                                    <h3 className="text-lg font-medium text-gray-700 text-md">{t[category]}:</h3>
+                                                    {skills[category].map((skill, index) => {
+                                                        return (
+                                                            <div key={index} className="flex items-center mb-2 no-break-inside">
+                                                                <p className="cv-item-subtitle text-sm mb-1">{skill}</p>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Projects */}
+                                {projects.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg cv-section-title">{t.projects}</h3>
+                                        {projects.map((proj) => {
+                                            return (
+                                                <div key={proj.id} className="mb-4 no-break-inside">
+                                                    <h4 className="cv-item-title text-md">{proj.name}</h4>
+                                                    <p className="cv-item-subtitle text-sm mb-1">{proj.technologies}</p>
+                                                    <p className="text-gray-700 text-sm leading-relaxed">{proj.description}</p>
+                                                    {proj.link && (
+                                                        <p className="text-sm">
+                                                            <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                                {proj.link}
+                                                            </a>
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* Awards/Certifications */}
+                                {awards.length > 0 && (
+                                    <div className="mb-6 ">
+                                        <h3 className="text-lg cv-section-title">{t.awardsCertifications}</h3>
+                                        {awards.map((award) => {
+                                            return (
+                                                <div key={award.id} className="mb-4 no-break-inside">
+                                                    <h4 className="cv-item-title text-md">{award.name}</h4>
+                                                    <p className="cv-item-subtitle text-sm mb-1">{award.year}</p>
+                                                    {award.description && <p className="text-gray-700 text-sm leading-relaxed">{award.description}</p>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.detailsOptional}:</label>
-                        <textarea
-                          value={edu.details}
-                          onChange={(e) => handleEducationChange(edu.id, 'details', e.target.value)}
-                          rows="2"
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder={t.detailsPlaceholder}
-                        ></textarea>
-                      </div>
                     </div>
-                  );
-                })}
-                <button
-                  onClick={addEducation}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
-                >
-                  {t.addEducation}
-                </button>
-              </div>
-
-              {/* Skills */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.skills}</h2>
-                {Object.keys(skills).map((category) => {
-                  return (
-                    <div key={category} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-                      <h3 className="text-lg font-medium text-gray-700 mb-3">{t[category]}:</h3>
-                      {skills[category].map((skill, index) => {
-                        return (
-                          <div key={index} className="flex items-center mb-2">
-                            <input
-                              type="text"
-                              value={skill}
-                              onChange={(e) => handleSkillsChange(category, index, e.target.value)}
-                              className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mr-2"
-                            />
-                            <button
-                              onClick={() => removeSkill(category, index)}
-                              className="p-1 bg-red-400 text-white rounded-full hover:bg-red-500 transition-colors"
-                              title={t.removeSkill}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                              </svg>
-                            </button>
-                          </div>
-                        );
-                      })}
-                      <button
-                        onClick={() => addSkill(category)}
-                        className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-                      >
-                        {t.addSkill}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Projects */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.projects}</h2>
-                {projects.map((proj) => {
-                  return (
-                    <div key={proj.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
-                      <button
-                        onClick={() => removeProject(proj.id)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        title={t.removeProject}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.projectName}:</label>
-                        <input
-                          type="text"
-                          value={proj.name}
-                          onChange={(e) => handleProjectChange(proj.id, 'name', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.technologiesUsed}:</label>
-                        <input
-                          type="text"
-                          value={proj.technologies}
-                          onChange={(e) => handleProjectChange(proj.id, 'technologies', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.projectDescription}:</label>
-                        <textarea
-                          value={proj.description}
-                          onChange={(e) => handleProjectChange(proj.id, 'description', e.target.value)}
-                          rows="3"
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder={t.projectDescriptionPlaceholder}
-                        ></textarea>
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.linkOptional}:</label>
-                        <input
-                          type="text"
-                          value={proj.link}
-                          onChange={(e) => handleProjectChange(proj.id, 'link', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={addProject}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
-                >
-                  {t.addProject}
-                </button>
-              </div>
-
-              {/* Awards/Certifications */}
-              <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.awardsCertifications}</h2>
-                {awards.map((award) => {
-                  return (
-                    <div key={award.id} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50 relative">
-                      <button
-                        onClick={() => removeAward(award.id)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                        title={t.removeAward}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.awardName}:</label>
-                        <input
-                          type="text"
-                          value={award.name}
-                          onChange={(e) => handleAwardChange(award.id, 'name', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.awardYear}:</label>
-                        <input
-                          type="text"
-                          value={award.year}
-                          onChange={(e) => handleAwardChange(award.id, 'year', e.target.value)}
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-sm font-medium text-gray-700">{t.awardDescriptionOptional}:</label>
-                        <textarea
-                          value={award.description}
-                          onChange={(e) => handleAwardChange(award.id, 'description', e.target.value)}
-                          rows="2"
-                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder={t.awardDescriptionPlaceholder}
-                        ></textarea>
-                      </div>
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={addAward}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-md"
-                >
-                  {t.addAwardCertification}
-                </button>
-              </div>
-
-              {/* Bottom Controls */}
-              <div className="mt-8 flex flex-col space-y-4">
-                <button
-                  onClick={exportToPdf}
-                  className="w-full px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>{t.exportToPdf}</span>
-                </button>
-                <button
-                  onClick={saveCvToFile}
-                  className="w-full px-6 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0-8V4m0 8h.01M12 4a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2V6a2 2 0 00-2-2h-4z" />
-                  </svg>
-                  <span>{t.exportCvSession}</span>
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                  onChange={handleFileSelect}
-                  accept=".json" // Only accept JSON files
-                />
-                <button
-                  onClick={triggerImport}
-                  className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  <span>{t.importCvSession}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* CV Preview Section */}
-            <div className="w-full md:w-1/2 p-6 bg-white overflow-y-auto max-h-[calc(100vh-2rem)]">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">{t.cvPreview}</h2>
-              <div ref={cvContentRef} className="cv-document p-8 bg-white shadow-lg rounded-lg">
-                {/* Personal Information */}
-                <div className="text-center mb-6">
-                  {personalInfo.profilePicture && (
-                    <div className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-blue-200 shadow-lg overflow-hidden flex items-center justify-center"> {/* Added flex for centering */}
-                      <img
-                        src={personalInfo.profilePicture}
-                        alt="Profile"
-                        // Use explicitly calculated dimensions for PDF export reliability
-                        width={personalInfo.profilePictureWidth || 150}
-                        height={personalInfo.profilePictureHeight || 150}
-                        style={{ objectFit: 'cover' }} // Keep object-fit for visual consistency in browser
-                      />
-                    </div>
-                  )}
-                  <h1 className="text-4xl font-bold text-gray-900 mb-1">{personalInfo.name}</h1>
-                  <p className="text-xl text-gray-700 mb-3">{personalInfo.title}</p>
-                  <div className="flex flex-wrap justify-center text-gray-600 text-sm">
-                    {personalInfo.email && <span className="mx-2">{personalInfo.email}</span>}
-                    {personalInfo.phone && <span className="mx-2">{personalInfo.phone}</span>}
-                    {personalInfo.linkedin && <a href={`https://${personalInfo.linkedin}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.linkedin}</a>}
-                    {personalInfo.github && <a href={`https://${personalInfo.github}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.github}</a>}
-                    {personalInfo.website && <a href={`https://${personalInfo.website}`} target="_blank" rel="noopener noreferrer" className="mx-2 text-blue-600 hover:underline">{personalInfo.website}</a>}
-                    {personalInfo.address && <span className="mx-2">{personalInfo.address}</span>}
-                  </div>
                 </div>
+            );
+        };
 
-                {/* Summary */}
-                {summary && (
-                  <div className="mb-6 no-break-inside">
-                    <h3 className="text-lg cv-section-title">{t.summary}</h3>
-                    <p className="text-gray-700 leading-relaxed">{summary}</p>
-                  </div>
-                )}
-
-                {/* Work Experience */}
-                {experiences.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg cv-section-title">{t.workExperience}</h3>
-                    {experiences.map((exp) => {
-                      return (
-                        <div key={exp.id} className="mb-4 no-break-inside">
-                          <h4 className="cv-item-title text-md">{exp.title}</h4>
-                          <p className="cv-item-subtitle text-sm">{exp.company} | {exp.location}</p>
-                          <p className="cv-item-dates text-xs mb-2">{exp.startDate} - {exp.endDate === 'Present' ? t.present : exp.endDate}</p>
-                          <ul className="cv-description-list text-sm">
-                            {exp.description.filter(Boolean).map((desc, index) => {
-                              return (
-                                <li key={index}>{desc}</li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Education */}
-                {education.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg cv-section-title">{t.education}</h3>
-                    {education.map((edu) => {
-                      return (
-                        <div key={edu.id} className="mb-4 no-break-inside">
-                          <h4 className="cv-item-title text-md">{edu.degree}</h4>
-                          <p className="cv-item-subtitle text-sm">{edu.university} | {edu.location}</p>
-                          <p className="cv-item-dates text-xs mb-2">{edu.year}</p>
-                          {edu.details && <p className="text-gray-700 text-sm">{edu.details}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Skills */}
-                {Object.values(skills).some(arr => arr.length > 0 && arr.some(Boolean)) && (
-                  <div className="mb-6">
-                    <h3 className="text-lg cv-section-title">{t.skills}</h3>
-                    {Object.keys(skills).map((category) => {
-                      return (
-                        <div key={category} className="mb-4">
-                          <h3 className="text-lg font-medium text-gray-700 text-md">{t[category]}:</h3>
-                          {skills[category].map((skill, index) => {
-                            return (
-                              <div key={index} className="flex items-center mb-2 no-break-inside">
-                                <p className="cv-item-subtitle text-sm mb-1">{skill}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Projects */}
-                {projects.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg cv-section-title">{t.projects}</h3>
-                    {projects.map((proj) => {
-                      return (
-                        <div key={proj.id} className="mb-4 no-break-inside">
-                          <h4 className="cv-item-title text-md">{proj.name}</h4>
-                          <p className="cv-item-subtitle text-sm mb-1">{proj.technologies}</p>
-                          <p className="text-gray-700 text-sm leading-relaxed">{proj.description}</p>
-                          {proj.link && (
-                            <p className="text-sm">
-                              <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                {proj.link}
-                              </a>
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Awards/Certifications */}
-                {awards.length > 0 && (
-                  <div className="mb-6 ">
-                    <h3 className="text-lg cv-section-title">{t.awardsCertifications}</h3>
-                    {awards.map((award) => {
-                      return (
-                        <div key={award.id} className="mb-4 no-break-inside">
-                          <h4 className="cv-item-title text-md">{award.name}</h4>
-                          <p className="cv-item-subtitle text-sm mb-1">{award.year}</p>
-                          {award.description && <p className="text-gray-700 text-sm leading-relaxed">{award.description}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
 </body>
 
 </html>
