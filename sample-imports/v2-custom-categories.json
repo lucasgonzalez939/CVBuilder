@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "exportedAt": "2026-08-30T00:00:00.000Z"
+  },
+  "data": {
+    "en": {
+      "personalInfo": {
+        "name": "Custom Category User",
+        "title": "Platform Engineer",
+        "email": "platform@example.com"
+      },
+      "summary": "Schema v2 payload with custom skills categories.",
+      "experiences": [],
+      "education": [],
+      "skills": {
+        "programmingLanguages": ["TypeScript", "Python"],
+        "cloudPlatforms": ["AWS", "Azure"],
+        "observability": "Grafana, Prometheus, OpenTelemetry"
+      },
+      "projects": [],
+      "awards": []
+    },
+    "es": {
+      "personalInfo": {
+        "name": "Usuario Personalizado",
+        "title": "Ingeniero de Plataforma",
+        "email": "plataforma@example.com"
+      },
+      "summary": "Carga v2 con categorias personalizadas.",
+      "experiences": [],
+      "education": [],
+      "skills": {
+        "programmingLanguages": ["TypeScript", "Python"],
+        "cloudPlatforms": ["AWS", "Azure"],
+        "observability": ["Grafana", "Prometheus"]
+      },
+      "projects": [],
+      "awards": []
+    }
+  }
+}

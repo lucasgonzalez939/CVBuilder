@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "schemaVersion": 99,
+    "exportedAt": "2026-08-30T00:00:00.000Z"
+  },
+  "data": {
+    "en": {
+      "personalInfo": {
+        "name": 12345,
+        "title": true
+      },
+      "summary": 98765,
+      "experiences": "invalid",
+      "education": null,
+      "skills": {
+        "programmingLanguages": ["JavaScript", 77, false],
+        "cloudPlatforms": {
+          "list": ["AWS", "GCP"]
+        },
+        "tooling": {
+          "alpha": "Git",
+          "beta": ["Docker", "Terraform"]
+        }
+      },
+      "projects": [],
+      "awards": "invalid"
+    },
+    "es": {
+      "skills": "invalid"
+    }
+  }
+}

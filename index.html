@@ -92,6 +92,7 @@
                 website: "Website",
                 address: "Address",
                 profilePicture: "Profile Picture", // New translation
+                profileFrameColor: "Profile Frame Color",
                 uploadImage: "Upload Image", // New translation
                 removeImage: "Remove Image", // New translation
                 summary: "Summary",
@@ -139,12 +140,15 @@
                 awardDescriptionOptional: "Description (Optional)",
                 awardDescriptionPlaceholder: "e.g., Certification in...",
                 exportToPdf: "Export to PDF",
+                exportToPdfText: "Export PDF (Text)",
+                exportToPdfImage: "Export PDF (Image)",
                 exportCvSession: "Export CV Data File",
                 importCvSession: "Import CV Data File",
                 cvPreview: "CV Preview",
                 saveSuccess: "CV data saved to file successfully!",
                 saveError: "Error saving CV data to file. Please try again.",
                 loadSuccess: "CV data loaded from file successfully!",
+                loadPartial: "CV data loaded with adjustments:",
                 loadError: "Error loading CV data from file. The file might be corrupted or invalid.",
                 noFileSelected: "No file selected.",
                 language: "Language",
@@ -153,6 +157,7 @@
                 newSession: "New Session",
                 newSessionConfirm: "Are you sure you want to start a new session? All unsaved data will be lost.",
                 newSessionStarted: "New session started. All data cleared.",
+                pdfExportFallback: "Text PDF export failed, using image-based fallback.",
             },
             es: {
                 cvBuilder: "Constructor de CV",
@@ -166,6 +171,7 @@
                 website: "Sitio Web",
                 address: "Dirección",
                 profilePicture: "Foto de Perfil", // New translation
+                profileFrameColor: "Color del Marco de la Foto",
                 uploadImage: "Subir Imagen", // New translation
                 removeImage: "Eliminar Imagen", // New translation
                 summary: "Resumen",
@@ -213,12 +219,15 @@
                 awardDescriptionOptional: "Descripción (Opcional)",
                 awardDescriptionPlaceholder: "Ej: Curso de desarrollo en...",
                 exportToPdf: "Exportar a PDF",
+                exportToPdfText: "Exportar PDF (Texto)",
+                exportToPdfImage: "Exportar PDF (Imagen)",
                 exportCvSession: "Exportar Archivo de Datos CV",
                 importCvSession: "Importar Archivo de Datos CV",
                 cvPreview: "Vista Previa del CV",
                 saveSuccess: "¡Datos del CV guardados en archivo correctamente!",
                 saveError: "Error al guardar los datos del CV en archivo. Inténtelo de nuevo.",
                 loadSuccess: "¡Datos del CV cargados desde archivo correctamente!",
+                loadPartial: "Datos del CV cargados con ajustes:",
                 loadError: "Error al cargar los datos del CV desde archivo. El archivo podría estar corrupto o no válido.",
                 noFileSelected: "Ningún archivo seleccionado.",
                 language: "Idioma",
@@ -227,6 +236,7 @@
                 newSession: "Nueva Sesión",
                 newSessionConfirm: "¿Está seguro de que desea iniciar una nueva sesión? Se perderán todos los datos no guardados.",
                 newSessionStarted: "Nueva sesión iniciada. Todos los datos borrados.",
+                pdfExportFallback: "La exportación de texto falló, usando respaldo basado en imagen.",
             },
         };
 
@@ -242,6 +252,7 @@
                 website: '',
                 address: '',
                 profilePicture: '', // Added profile picture field
+                profileFrameColor: '#bfdbfe',
                 profilePictureWidth: null, // New: Store original image width for PDF
                 profilePictureHeight: null, // New: Store original image height for PDF
             },
@@ -258,6 +269,8 @@
             awards: [],
         };
 
+        const CURRENT_SCHEMA_VERSION = 2;
+
         // Initial state for all CV data fields, structured by locale
         const initialCvDataByLocale = {
             en: {
@@ -271,6 +284,7 @@
                     website: 'johndoe.com',
                     address: 'Anytown, USA',
                     profilePicture: 'https://placehold.co/150x150/aabbcc/ffffff?text=JD', // Placeholder image
+                    profileFrameColor: '#bfdbfe',
                     profilePictureWidth: 150, // Initial placeholder dimensions
                     profilePictureHeight: 150, // Initial placeholder dimensions
                 },
@@ -302,6 +316,7 @@
                     website: 'juanperez.com',
                     address: 'Cualquier ciudad, México',
                     profilePicture: 'https://placehold.co/150x150/aabbcc/ffffff?text=JP',
+                    profileFrameColor: '#bfdbfe',
                     profilePictureWidth: 150,
                     profilePictureHeight: 150,
                 },
@@ -378,6 +393,283 @@
             }
         };
 
+        const createEmptyLocaleData = () => ({
+            personalInfo: { ...emptyCvDataTemplate.personalInfo },
+            summary: '',
+            experiences: [],
+            education: [],
+            skills: {
+                programmingLanguages: [],
+                frameworks: [],
+                databases: [],
+                tools: [],
+            },
+            projects: [],
+            awards: [],
+        });
+
+        const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+        const toStringSafe = (value) => {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            if (typeof value === 'string') {
+                return value;
+            }
+            if (typeof value === 'number' || typeof value === 'boolean') {
+                return String(value);
+            }
+            return '';
+        };
+
+        const coerceToStringArray = (value) => {
+            if (Array.isArray(value)) {
+                return value
+                    .map(item => toStringSafe(item).trim())
+                    .filter(Boolean);
+            }
+
+            if (typeof value === 'string') {
+                return value
+                    .split(/\n|,/) // Support comma-separated and line-separated inputs
+                    .map(item => item.trim())
+                    .filter(Boolean);
+            }
+
+            if (isObject(value)) {
+                if (Array.isArray(value.items)) {
+                    return coerceToStringArray(value.items);
+                }
+                if (Array.isArray(value.list)) {
+                    return coerceToStringArray(value.list);
+                }
+                if (Array.isArray(value.values)) {
+                    return coerceToStringArray(value.values);
+                }
+                return Object.values(value)
+                    .flatMap(item => coerceToStringArray(item))
+                    .filter(Boolean);
+            }
+
+            return [];
+        };
+
+        const normalizePersonalInfo = (personalInfoInput) => {
+            const merged = {
+                ...emptyCvDataTemplate.personalInfo,
+                ...(isObject(personalInfoInput) ? personalInfoInput : {}),
+            };
+
+            const width = Number(merged.profilePictureWidth);
+            const height = Number(merged.profilePictureHeight);
+
+            const frameColor = toStringSafe(merged.profileFrameColor).trim();
+
+            return {
+                ...merged,
+                name: toStringSafe(merged.name),
+                title: toStringSafe(merged.title),
+                email: toStringSafe(merged.email),
+                phone: toStringSafe(merged.phone),
+                linkedin: toStringSafe(merged.linkedin),
+                github: toStringSafe(merged.github),
+                website: toStringSafe(merged.website),
+                address: toStringSafe(merged.address),
+                profilePicture: toStringSafe(merged.profilePicture),
+                profileFrameColor: /^#([0-9a-fA-F]{6})$/.test(frameColor) ? frameColor : emptyCvDataTemplate.personalInfo.profileFrameColor,
+                profilePictureWidth: Number.isFinite(width) ? width : null,
+                profilePictureHeight: Number.isFinite(height) ? height : null,
+            };
+        };
+
+        const normalizeExperiences = (experiencesInput) => {
+            if (!Array.isArray(experiencesInput)) {
+                return [];
+            }
+
+            return experiencesInput.map((item, index) => {
+                const source = isObject(item) ? item : {};
+                const description = coerceToStringArray(source.description);
+                return {
+                    ...source,
+                    id: Number.isFinite(Number(source.id)) ? Number(source.id) : index + 1,
+                    title: toStringSafe(source.title),
+                    company: toStringSafe(source.company),
+                    location: toStringSafe(source.location),
+                    startDate: toStringSafe(source.startDate),
+                    endDate: toStringSafe(source.endDate),
+                    description: description.length > 0 ? description : [''],
+                };
+            });
+        };
+
+        const normalizeEducation = (educationInput) => {
+            if (!Array.isArray(educationInput)) {
+                return [];
+            }
+
+            return educationInput.map((item, index) => {
+                const source = isObject(item) ? item : {};
+                return {
+                    ...source,
+                    id: Number.isFinite(Number(source.id)) ? Number(source.id) : index + 1,
+                    degree: toStringSafe(source.degree),
+                    university: toStringSafe(source.university),
+                    location: toStringSafe(source.location),
+                    year: toStringSafe(source.year),
+                    details: toStringSafe(source.details),
+                };
+            });
+        };
+
+        const normalizeProjects = (projectsInput) => {
+            if (!Array.isArray(projectsInput)) {
+                return [];
+            }
+
+            return projectsInput.map((item, index) => {
+                const source = isObject(item) ? item : {};
+                return {
+                    ...source,
+                    id: Number.isFinite(Number(source.id)) ? Number(source.id) : index + 1,
+                    name: toStringSafe(source.name),
+                    technologies: toStringSafe(source.technologies),
+                    description: toStringSafe(source.description),
+                    link: toStringSafe(source.link),
+                };
+            });
+        };
+
+        const normalizeAwards = (awardsInput) => {
+            if (!Array.isArray(awardsInput)) {
+                return [];
+            }
+
+            return awardsInput.map((item, index) => {
+                const source = isObject(item) ? item : {};
+                return {
+                    ...source,
+                    id: Number.isFinite(Number(source.id)) ? Number(source.id) : index + 1,
+                    name: toStringSafe(source.name),
+                    year: toStringSafe(source.year),
+                    description: toStringSafe(source.description),
+                };
+            });
+        };
+
+        const normalizeSkills = (skillsInput) => {
+            const normalizedSkills = { ...createEmptyLocaleData().skills };
+
+            if (!isObject(skillsInput)) {
+                return normalizedSkills;
+            }
+
+            Object.entries(skillsInput).forEach(([category, value]) => {
+                normalizedSkills[category] = coerceToStringArray(value);
+            });
+
+            return normalizedSkills;
+        };
+
+        const localeSectionKeys = ['personalInfo', 'summary', 'experiences', 'education', 'skills', 'projects', 'awards'];
+
+        const looksLikeLocaleData = (value) => {
+            if (!isObject(value)) {
+                return false;
+            }
+
+            return localeSectionKeys.some(section => Object.prototype.hasOwnProperty.call(value, section));
+        };
+
+        const normalizeLocaleData = (localeInput) => {
+            const source = isObject(localeInput) ? localeInput : {};
+            const emptyLocale = createEmptyLocaleData();
+
+            return {
+                ...emptyLocale,
+                ...source,
+                personalInfo: normalizePersonalInfo(source.personalInfo),
+                summary: toStringSafe(source.summary),
+                experiences: normalizeExperiences(source.experiences),
+                education: normalizeEducation(source.education),
+                skills: normalizeSkills(source.skills),
+                projects: normalizeProjects(source.projects),
+                awards: normalizeAwards(source.awards),
+            };
+        };
+
+        const getLocaleShapeWarnings = (localeKey, localeData) => {
+            const warnings = [];
+
+            if (!isObject(localeData)) {
+                warnings.push(`${localeKey}: missing locale object, defaults were used.`);
+                return warnings;
+            }
+
+            if (localeData.summary !== undefined && typeof localeData.summary !== 'string') {
+                warnings.push(`${localeKey}.summary was not a string and was normalized.`);
+            }
+
+            const expectedArraySections = ['experiences', 'education', 'projects', 'awards'];
+            expectedArraySections.forEach((section) => {
+                if (localeData[section] !== undefined && !Array.isArray(localeData[section])) {
+                    warnings.push(`${localeKey}.${section} was not an array and was reset.`);
+                }
+            });
+
+            if (localeData.skills !== undefined && !isObject(localeData.skills)) {
+                warnings.push(`${localeKey}.skills was not an object and was reset.`);
+            }
+
+            return warnings;
+        };
+
+        const normalizeImportedDataWithReport = (rawData) => {
+            if (!isObject(rawData)) {
+                throw new Error('Invalid import payload: expected object.');
+            }
+
+            const warnings = [];
+
+            if (isObject(rawData.meta) && Number(rawData.meta.schemaVersion) > CURRENT_SCHEMA_VERSION) {
+                warnings.push('Imported data is from a newer schema version; best-effort migration applied.');
+            }
+
+            if (isObject(rawData.meta) && !isObject(rawData.data)) {
+                warnings.push('Expected wrapped data under data, used fallback parsing.');
+            }
+
+            const payload = isObject(rawData.data) ? rawData.data : rawData;
+
+            if (looksLikeLocaleData(payload)) {
+                warnings.push('Single-locale import detected; mapped payload to en and reset es.');
+                warnings.push(...getLocaleShapeWarnings('en', payload));
+                return {
+                    data: {
+                        en: normalizeLocaleData(payload),
+                        es: createEmptyLocaleData(),
+                    },
+                    warnings,
+                };
+            }
+
+            warnings.push(...getLocaleShapeWarnings('en', payload.en));
+            warnings.push(...getLocaleShapeWarnings('es', payload.es));
+
+            return {
+                data: {
+                    en: normalizeLocaleData(payload.en),
+                    es: normalizeLocaleData(payload.es),
+                },
+                warnings,
+            };
+        };
+
+        const normalizeImportedData = (rawData) => {
+            const { data } = normalizeImportedDataWithReport(rawData);
+            return data;
+        };
 
         // Main App component for the CV Builder
         const App = () => {
@@ -391,7 +683,8 @@
                 try {
                     const storedData = localStorage.getItem('cvData');
                     if (storedData) {
-                        return JSON.parse(storedData);
+                        const parsedData = JSON.parse(storedData);
+                        return normalizeImportedData(parsedData);
                     }
                 } catch (error) {
                     console.error("Failed to parse data from localStorage:", error);
@@ -408,12 +701,27 @@
             // Destructure current locale's CV data for easier access
             const { personalInfo, summary, experiences, education, skills, projects, awards } = cvDataByLocale[locale];
 
+            const formatCategoryLabel = (category) => {
+                if (t[category]) {
+                    return t[category];
+                }
+
+                return category
+                    .replace(/([a-z])([A-Z])/g, '$1 $2')
+                    .replace(/[_-]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .replace(/\b\w/g, char => char.toUpperCase());
+            };
+
             // Ref for the CV content to be exported as PDF
             const cvContentRef = React.useRef(null);
             // Ref for the hidden file input
             const fileInputRef = React.useRef(null);
             // Ref for the image file input
             const imageInputRef = React.useRef(null);
+            // Ref for script loading promise (avoid duplicate jsPDF script loads)
+            const jsPdfLoaderRef = React.useRef(null);
 
             // State for custom message display
             const [message, setMessage] = React.useState('');
@@ -477,7 +785,7 @@
                     } else if (section === 'skills') {
                         const newSkills = { ...currentLocaleData.skills };
                         // The 'id' parameter is the category, and 'field' is the index
-                        const newCategoryArray = [...newSkills[id]];
+                        const newCategoryArray = Array.isArray(newSkills[id]) ? [...newSkills[id]] : [];
                         newCategoryArray[field] = value; // Use the 'field' parameter, which holds the index
                         newSkills[id] = newCategoryArray;
                         return {
@@ -554,7 +862,7 @@
                         ...prev[locale],
                         skills: {
                             ...prev[locale].skills,
-                            [category]: [...prev[locale].skills[category], '']
+                            [category]: [...(Array.isArray(prev[locale].skills[category]) ? prev[locale].skills[category] : []), '']
                         }
                     }
                 }));
@@ -566,7 +874,7 @@
                         ...prev[locale],
                         skills: {
                             ...prev[locale].skills,
-                            [category]: prev[locale].skills[category].filter((_, i) => i !== index)
+                            [category]: (Array.isArray(prev[locale].skills[category]) ? prev[locale].skills[category] : []).filter((_, i) => i !== index)
                         }
                     }
                 }));
@@ -635,8 +943,53 @@
                 }
             };
 
-            // Function to export CV to PDF
-            const exportToPdf = () => {
+            const getSafePdfFileName = () => {
+                const userName = cvDataByLocale[locale].personalInfo.name || 'CV_User';
+                const sanitizedName = userName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                return `${sanitizedName}_cv_${locale.toLowerCase()}.pdf`;
+            };
+
+            const toAbsoluteUrl = (value) => {
+                const link = toStringSafe(value).trim();
+                if (!link) {
+                    return '';
+                }
+
+                if (link.startsWith('http://') || link.startsWith('https://')) {
+                    return link;
+                }
+
+                return `https://${link}`;
+            };
+
+            const loadJsPdf = () => {
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    return Promise.resolve(window.jspdf.jsPDF);
+                }
+
+                if (jsPdfLoaderRef.current) {
+                    return jsPdfLoaderRef.current;
+                }
+
+                jsPdfLoaderRef.current = new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                    script.onload = () => {
+                        if (window.jspdf && window.jspdf.jsPDF) {
+                            resolve(window.jspdf.jsPDF);
+                        } else {
+                            reject(new Error('jsPDF loaded but jsPDF constructor is unavailable.'));
+                        }
+                    };
+                    script.onerror = () => reject(new Error('Failed to load jsPDF script.'));
+                    document.body.appendChild(script);
+                });
+
+                return jsPdfLoaderRef.current;
+            };
+
+            // Existing fallback function using html2pdf (image-based)
+            const exportToPdfImage = () => {
                 const element = cvContentRef.current;
                 if (element) {
                     // Load html2pdf.js dynamically
@@ -646,7 +999,7 @@
                         // Options for html2pdf
                         const options = {
                             margin: 0.5,
-                            filename: `${cvDataByLocale[locale].personalInfo.name.replace(/\s/g, '_')}_CV_${locale.toUpperCase()}.pdf`,
+                            filename: getSafePdfFileName(),
                             image: { type: 'jpeg', quality: 0.98 },
                             html2canvas: { scale: 2, useCORS: true },
                             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
@@ -658,10 +1011,554 @@
                 }
             };
 
+            // New exporter: writes real text to the PDF instead of a rasterized image.
+            const exportToPdf = async () => {
+                try {
+                    const JsPDF = await loadJsPdf();
+                    const doc = new JsPDF({
+                        orientation: 'portrait',
+                        unit: 'pt',
+                        format: 'a4',
+                    });
+
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    const margin = 44;
+                    const contentWidth = pageWidth - (margin * 2);
+                    let y = margin;
+
+                    const pdfTheme = {
+                        sectionTitleSize: 13,
+                        sectionTitleSpacingTop: 6,
+                        sectionTitleSpacingBottom: 14,
+                        nameSize: 22,
+                        roleSize: 13,
+                        bodySize: 10,
+                        bodyLineHeight: 15,
+                        compactSize: 9,
+                        compactLineHeight: 13,
+                        itemTitleSize: 11,
+                        itemTitleLineHeight: 15,
+                        textColor: [55, 65, 81],
+                        headingColor: [17, 24, 39],
+                        accentColor: [37, 99, 235],
+                        mutedColor: [107, 114, 128],
+                        avatarSize: 96,
+                        avatarCanvasSize: 420,
+                        avatarOuterInset: 18,
+                        avatarFramePadding: 2,
+                        avatarFrameWidth: 6,
+                        avatarShadowColor: 'rgba(15, 23, 42, 0.22)',
+                        avatarShadowBlur: 14,
+                        avatarShadowOffsetY: 6,
+                        avatarBottomSpacing: 26,
+                    };
+
+                    const ensurePageSpace = (requiredHeight = 18) => {
+                        if (y + requiredHeight > pageHeight - margin) {
+                            doc.addPage();
+                            y = margin;
+                        }
+                    };
+
+                    const estimateWrappedHeight = (text, maxWidth, fontSize, lineHeight) => {
+                        const value = toStringSafe(text).trim();
+                        if (!value) {
+                            return 0;
+                        }
+                        doc.setFontSize(fontSize);
+                        const lines = doc.splitTextToSize(value, maxWidth);
+                        return lines.length * lineHeight;
+                    };
+
+                    const estimateBulletListHeight = (items, lineHeight = 14) => {
+                        const cleanItems = items.map(item => toStringSafe(item).trim()).filter(Boolean);
+                        return cleanItems.reduce((total, item) => {
+                            doc.setFontSize(pdfTheme.bodySize);
+                            const lines = doc.splitTextToSize(item, contentWidth - 14);
+                            return total + (lines.length * lineHeight);
+                        }, 0);
+                    };
+
+                    const writeWrapped = (text, options = {}) => {
+                        const value = toStringSafe(text).trim();
+                        if (!value) {
+                            return;
+                        }
+
+                        const x = options.x ?? margin;
+                        const maxWidth = options.maxWidth ?? contentWidth;
+                        const fontSize = options.fontSize ?? 10;
+                        const lineHeight = options.lineHeight ?? Math.round(fontSize * 1.45);
+                        const color = options.color ?? pdfTheme.textColor;
+                        const isBold = Boolean(options.bold);
+
+                        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+                        doc.setFontSize(fontSize);
+                        doc.setTextColor(...color);
+
+                        const lines = doc.splitTextToSize(value, maxWidth);
+                        ensurePageSpace(lines.length * lineHeight + 2);
+
+                        lines.forEach((line) => {
+                            doc.text(line, x, y);
+                            y += lineHeight;
+                        });
+                    };
+
+                    const writeCentered = (text, options = {}) => {
+                        const value = toStringSafe(text).trim();
+                        if (!value) {
+                            return;
+                        }
+
+                        const fontSize = options.fontSize ?? 16;
+                        const lineHeight = options.lineHeight ?? Math.round(fontSize * 1.35);
+                        const color = options.color ?? pdfTheme.headingColor;
+                        const isBold = Boolean(options.bold);
+
+                        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+                        doc.setFontSize(fontSize);
+                        doc.setTextColor(...color);
+
+                        ensurePageSpace(lineHeight + 2);
+                        doc.text(value, pageWidth / 2, y, { align: 'center' });
+                        y += lineHeight;
+                    };
+
+                    const writeLinkLine = (text, url, options = {}) => {
+                        const value = toStringSafe(text).trim();
+                        const href = toAbsoluteUrl(url);
+                        if (!value || !href) {
+                            return;
+                        }
+
+                        const x = options.x ?? margin;
+                        const fontSize = options.fontSize ?? pdfTheme.bodySize;
+                        const lineHeight = options.lineHeight ?? Math.round(fontSize * 1.4);
+
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(fontSize);
+                        doc.setTextColor(...pdfTheme.accentColor);
+
+                        ensurePageSpace(lineHeight + 2);
+                        doc.text(value, x, y);
+                        const width = doc.getTextWidth(value);
+                        doc.setDrawColor(...pdfTheme.accentColor);
+                        doc.setLineWidth(0.6);
+                        doc.line(x, y + 1.5, x + width, y + 1.5);
+                        doc.link(x, y - fontSize, width, lineHeight + 2, { url: href });
+                        y += lineHeight;
+                    };
+
+                    const writeSectionTitle = (title) => {
+                        const value = toStringSafe(title).trim();
+                        if (!value) {
+                            return;
+                        }
+
+                        y += pdfTheme.sectionTitleSpacingTop;
+                        ensurePageSpace(24);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setFontSize(pdfTheme.sectionTitleSize);
+                        doc.setTextColor(...pdfTheme.headingColor);
+                        doc.text(value, margin, y);
+                        y += 8;
+                        doc.setDrawColor(226, 232, 240);
+                        doc.line(margin, y, pageWidth - margin, y);
+                        y += pdfTheme.sectionTitleSpacingBottom;
+                    };
+
+                    const writeSectionWithKeep = (title, estimatedFirstItemHeight = 0) => {
+                        const minRequired = 24 + Math.max(0, estimatedFirstItemHeight);
+                        ensurePageSpace(minRequired);
+                        writeSectionTitle(title);
+                    };
+
+                    const buildCircularAvatarDataUrl = (imageDataUrl, options = {}) => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvasSize = options.canvasSize ?? 320;
+                                const outerInset = options.outerInset ?? 14;
+                                const framePadding = options.framePadding ?? 3;
+                                const frameWidth = options.frameWidth ?? 6;
+                                const frameColor = options.frameColor ?? '#bfdbfe';
+                                const shadowColor = options.shadowColor ?? 'rgba(15, 23, 42, 0.22)';
+                                const shadowBlur = options.shadowBlur ?? 16;
+                                const shadowOffsetY = options.shadowOffsetY ?? 8;
+
+                                const canvas = document.createElement('canvas');
+                                canvas.width = canvasSize;
+                                canvas.height = canvasSize;
+
+                                const ctx = canvas.getContext('2d');
+                                if (!ctx) {
+                                    reject(new Error('Canvas context is not available for avatar rendering.'));
+                                    return;
+                                }
+
+                                const center = canvasSize / 2;
+                                const outerRadius = center - outerInset;
+                                const frameRadius = outerRadius - framePadding;
+                                const imageRadius = frameRadius - frameWidth;
+
+                                const sourceSize = Math.min(img.naturalWidth, img.naturalHeight);
+                                const sourceX = (img.naturalWidth - sourceSize) / 2;
+                                const sourceY = (img.naturalHeight - sourceSize) / 2;
+
+                                ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+                                // Shadow layer to mimic preview depth.
+                                ctx.save();
+                                ctx.shadowColor = shadowColor;
+                                ctx.shadowBlur = shadowBlur;
+                                ctx.shadowOffsetX = 0;
+                                ctx.shadowOffsetY = shadowOffsetY;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.beginPath();
+                                ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.restore();
+
+                                // White base so transparent corners look clean in PDF viewers.
+                                ctx.fillStyle = '#ffffff';
+                                ctx.beginPath();
+                                ctx.arc(center, center, outerRadius, 0, Math.PI * 2);
+                                ctx.fill();
+
+                                // Blue frame similar to preview border color.
+                                ctx.fillStyle = frameColor;
+                                ctx.beginPath();
+                                ctx.arc(center, center, frameRadius, 0, Math.PI * 2);
+                                ctx.fill();
+
+                                // Thin inner highlight improves separation from the image.
+                                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.arc(center, center, imageRadius + 1, 0, Math.PI * 2);
+                                ctx.stroke();
+
+                                // Circular clip for the image itself.
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(center, center, imageRadius, 0, Math.PI * 2);
+                                ctx.closePath();
+                                ctx.clip();
+                                ctx.drawImage(
+                                    img,
+                                    sourceX,
+                                    sourceY,
+                                    sourceSize,
+                                    sourceSize,
+                                    center - imageRadius,
+                                    center - imageRadius,
+                                    imageRadius * 2,
+                                    imageRadius * 2
+                                );
+                                ctx.restore();
+
+                                resolve(canvas.toDataURL('image/png'));
+                            };
+
+                            img.onerror = () => reject(new Error('Failed to load profile image for PDF avatar rendering.'));
+                            img.src = imageDataUrl;
+                        });
+                    };
+
+                    const writeInlineContactRows = (chunks, options = {}) => {
+                        const fontSize = options.fontSize ?? pdfTheme.bodySize;
+                        const lineHeight = options.lineHeight ?? pdfTheme.bodyLineHeight;
+                        const separator = options.separator ?? ' | ';
+
+                        const validChunks = chunks
+                            .map(chunk => ({
+                                text: toStringSafe(chunk.text).trim(),
+                                url: chunk.url ? toAbsoluteUrl(chunk.url) : '',
+                                color: chunk.color,
+                            }))
+                            .filter(chunk => Boolean(chunk.text));
+
+                        if (validChunks.length === 0) {
+                            return;
+                        }
+
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(fontSize);
+
+                        const maxX = margin + contentWidth;
+                        const separatorWidth = doc.getTextWidth(separator);
+                        let cursorX = margin;
+
+                        const drawSegment = (text, color, url = '') => {
+                            const segmentText = toStringSafe(text);
+                            if (!segmentText) {
+                                return;
+                            }
+
+                            doc.setTextColor(...color);
+                            doc.text(segmentText, cursorX, y);
+                            const width = doc.getTextWidth(segmentText);
+
+                            if (url) {
+                                doc.setDrawColor(...pdfTheme.accentColor);
+                                doc.setLineWidth(0.5);
+                                doc.line(cursorX, y + 1.5, cursorX + width, y + 1.5);
+                                doc.link(cursorX, y - fontSize, width, lineHeight + 2, { url });
+                            }
+
+                            cursorX += width;
+                        };
+
+                        ensurePageSpace(lineHeight + 2);
+
+                        validChunks.forEach((chunk, index) => {
+                            const chunkWidth = doc.getTextWidth(chunk.text);
+                            const isLink = Boolean(chunk.url);
+
+                            if (index > 0 && cursorX > margin) {
+                                if (cursorX + separatorWidth > maxX) {
+                                    y += lineHeight;
+                                    ensurePageSpace(lineHeight + 2);
+                                    cursorX = margin;
+                                } else {
+                                    drawSegment(separator, [107, 114, 128]);
+                                }
+                            }
+
+                            if (cursorX + chunkWidth <= maxX) {
+                                drawSegment(chunk.text, isLink ? pdfTheme.accentColor : (chunk.color ?? [75, 85, 99]), chunk.url);
+                                return;
+                            }
+
+                            if (cursorX > margin) {
+                                y += lineHeight;
+                                ensurePageSpace(lineHeight + 2);
+                                cursorX = margin;
+                            }
+
+                            if (doc.getTextWidth(chunk.text) <= contentWidth) {
+                                drawSegment(chunk.text, isLink ? pdfTheme.accentColor : (chunk.color ?? [75, 85, 99]), chunk.url);
+                                return;
+                            }
+
+                            const wrapped = doc.splitTextToSize(chunk.text, contentWidth);
+                            wrapped.forEach((line, lineIndex) => {
+                                if (lineIndex > 0) {
+                                    y += lineHeight;
+                                    ensurePageSpace(lineHeight + 2);
+                                    cursorX = margin;
+                                }
+                                drawSegment(line, isLink ? pdfTheme.accentColor : (chunk.color ?? [75, 85, 99]), chunk.url);
+                                if (lineIndex < wrapped.length - 1) {
+                                    cursorX = margin;
+                                }
+                            });
+                        });
+
+                        y += lineHeight;
+                    };
+
+                    const writeBulletList = (items) => {
+                        items
+                            .map(item => toStringSafe(item).trim())
+                            .filter(Boolean)
+                            .forEach((item) => {
+                                const bulletX = margin + 4;
+                                const textX = margin + 14;
+                                const lines = doc.splitTextToSize(item, contentWidth - 14);
+                                ensurePageSpace((lines.length * 14) + 2);
+                                doc.setFont('helvetica', 'normal');
+                                doc.setFontSize(pdfTheme.bodySize);
+                                doc.setTextColor(...pdfTheme.textColor);
+                                doc.text('•', bulletX, y);
+                                lines.forEach((line, idx) => {
+                                    doc.text(line, textX, y + (idx * 14));
+                                });
+                                y += lines.length * 14;
+                            });
+                    };
+
+                    const localeData = cvDataByLocale[locale];
+                    const profile = localeData.personalInfo;
+
+                    const estimateExperienceHeight = (exp) => {
+                        const roleLine = [exp.title, exp.company].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                        const locationAndDates = [exp.location, `${toStringSafe(exp.startDate)} - ${toStringSafe(exp.endDate)}`.trim()]
+                            .map(v => toStringSafe(v).trim())
+                            .filter(Boolean)
+                            .join(' | ');
+
+                        return estimateWrappedHeight(roleLine, contentWidth, pdfTheme.itemTitleSize, pdfTheme.itemTitleLineHeight)
+                            + estimateWrappedHeight(locationAndDates, contentWidth, pdfTheme.compactSize, pdfTheme.compactLineHeight)
+                            + estimateBulletListHeight(Array.isArray(exp.description) ? exp.description : [])
+                            + 10;
+                    };
+
+                    const estimateEducationHeight = (edu) => {
+                        const degreeLine = [edu.degree, edu.university].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                        const metaLine = [edu.location, edu.year].map(v => toStringSafe(v).trim()).filter(Boolean).join(' | ');
+
+                        return estimateWrappedHeight(degreeLine, contentWidth, pdfTheme.itemTitleSize, pdfTheme.itemTitleLineHeight)
+                            + estimateWrappedHeight(metaLine, contentWidth, pdfTheme.compactSize, pdfTheme.compactLineHeight)
+                            + estimateWrappedHeight(edu.details, contentWidth, pdfTheme.bodySize, 14)
+                            + 8;
+                    };
+
+                    const estimateProjectHeight = (proj) => {
+                        return estimateWrappedHeight(proj.name, contentWidth, pdfTheme.itemTitleSize, pdfTheme.itemTitleLineHeight)
+                            + estimateWrappedHeight(proj.technologies, contentWidth, pdfTheme.compactSize, pdfTheme.compactLineHeight)
+                            + estimateWrappedHeight(proj.description, contentWidth, pdfTheme.bodySize, 14)
+                            + estimateWrappedHeight(proj.link, contentWidth, pdfTheme.bodySize, 14)
+                            + 8;
+                    };
+
+                    const estimateAwardHeight = (award) => {
+                        const awardTitle = [award.name, award.year].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                        return estimateWrappedHeight(awardTitle, contentWidth, pdfTheme.itemTitleSize, pdfTheme.itemTitleLineHeight)
+                            + estimateWrappedHeight(award.description, contentWidth, pdfTheme.bodySize, 14)
+                            + 8;
+                    };
+
+                    if (profile.profilePicture && profile.profilePicture.startsWith('data:image/')) {
+                        try {
+                            const avatarSize = pdfTheme.avatarSize;
+                            const avatarX = (pageWidth - avatarSize) / 2;
+                            const circularAvatar = await buildCircularAvatarDataUrl(profile.profilePicture, {
+                                canvasSize: pdfTheme.avatarCanvasSize,
+                                outerInset: pdfTheme.avatarOuterInset,
+                                framePadding: pdfTheme.avatarFramePadding,
+                                frameWidth: pdfTheme.avatarFrameWidth,
+                                frameColor: profile.profileFrameColor || emptyCvDataTemplate.personalInfo.profileFrameColor,
+                                shadowColor: pdfTheme.avatarShadowColor,
+                                shadowBlur: pdfTheme.avatarShadowBlur,
+                                shadowOffsetY: pdfTheme.avatarShadowOffsetY,
+                            });
+                            ensurePageSpace(avatarSize + pdfTheme.avatarBottomSpacing + pdfTheme.nameSize);
+                            doc.addImage(circularAvatar, 'PNG', avatarX, y, avatarSize, avatarSize);
+                            y += avatarSize + pdfTheme.avatarBottomSpacing;
+                        } catch (imageError) {
+                            console.warn('Skipping profile image in text PDF export:', imageError);
+                        }
+                    }
+
+                    writeCentered(profile.name, { fontSize: pdfTheme.nameSize, bold: true, color: [15, 23, 42] });
+                    writeCentered(profile.title, { fontSize: pdfTheme.roleSize, color: pdfTheme.textColor });
+                    y += 4;
+
+                    writeInlineContactRows([
+                        { text: profile.email },
+                        { text: profile.phone },
+                        { text: profile.linkedin, url: profile.linkedin },
+                        { text: profile.github, url: profile.github },
+                        { text: profile.website, url: profile.website },
+                        { text: profile.address },
+                    ], {
+                        fontSize: pdfTheme.bodySize,
+                        lineHeight: pdfTheme.bodyLineHeight,
+                    });
+
+                    if (toStringSafe(summary).trim()) {
+                        const summaryHeight = estimateWrappedHeight(summary, contentWidth, pdfTheme.bodySize, pdfTheme.bodyLineHeight);
+                        writeSectionWithKeep(t.summary, summaryHeight);
+                        writeWrapped(summary, { fontSize: pdfTheme.bodySize, lineHeight: pdfTheme.bodyLineHeight, color: pdfTheme.textColor });
+                    }
+
+                    if (experiences.length > 0) {
+                        writeSectionWithKeep(t.workExperience, estimateExperienceHeight(experiences[0]));
+                        experiences.forEach((exp) => {
+                            const roleLine = [exp.title, exp.company].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                            const locationAndDates = [exp.location, `${toStringSafe(exp.startDate)} - ${toStringSafe(exp.endDate)}`.trim()]
+                                .map(v => toStringSafe(v).trim())
+                                .filter(Boolean)
+                                .join(' | ');
+
+                            ensurePageSpace(estimateExperienceHeight(exp));
+                            writeWrapped(roleLine, { bold: true, fontSize: pdfTheme.itemTitleSize, lineHeight: pdfTheme.itemTitleLineHeight, color: [31, 41, 55] });
+                            writeWrapped(locationAndDates, { fontSize: pdfTheme.compactSize, lineHeight: pdfTheme.compactLineHeight, color: pdfTheme.mutedColor });
+                            writeBulletList(Array.isArray(exp.description) ? exp.description : []);
+                            y += 6;
+                        });
+                    }
+
+                    if (education.length > 0) {
+                        writeSectionWithKeep(t.education, estimateEducationHeight(education[0]));
+                        education.forEach((edu) => {
+                            const degreeLine = [edu.degree, edu.university].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                            const metaLine = [edu.location, edu.year].map(v => toStringSafe(v).trim()).filter(Boolean).join(' | ');
+
+                            ensurePageSpace(estimateEducationHeight(edu));
+                            writeWrapped(degreeLine, { bold: true, fontSize: pdfTheme.itemTitleSize, lineHeight: pdfTheme.itemTitleLineHeight, color: [31, 41, 55] });
+                            writeWrapped(metaLine, { fontSize: pdfTheme.compactSize, lineHeight: pdfTheme.compactLineHeight, color: pdfTheme.mutedColor });
+                            writeWrapped(edu.details, { fontSize: pdfTheme.bodySize, lineHeight: 14, color: pdfTheme.textColor });
+                            y += 6;
+                        });
+                    }
+
+                    if (Object.values(skills).some(arr => Array.isArray(arr) && arr.some(Boolean))) {
+                        writeSectionWithKeep(t.skills, 30);
+                        Object.keys(skills).forEach((category) => {
+                            const skillList = (Array.isArray(skills[category]) ? skills[category] : [])
+                                .map(skill => toStringSafe(skill).trim())
+                                .filter(Boolean);
+
+                            if (skillList.length === 0) {
+                                return;
+                            }
+
+                            const skillBlockHeight = estimateWrappedHeight(`${formatCategoryLabel(category)}:`, contentWidth, pdfTheme.bodySize, 14)
+                                + estimateWrappedHeight(skillList.join(', '), contentWidth, pdfTheme.bodySize, 14)
+                                + 4;
+                            ensurePageSpace(skillBlockHeight);
+                            writeWrapped(`${formatCategoryLabel(category)}:`, { bold: true, fontSize: pdfTheme.bodySize, lineHeight: 14, color: [31, 41, 55] });
+                            writeWrapped(skillList.join(', '), { fontSize: pdfTheme.bodySize, lineHeight: 14, color: pdfTheme.textColor });
+                            y += 4;
+                        });
+                    }
+
+                    if (projects.length > 0) {
+                        writeSectionWithKeep(t.projects, estimateProjectHeight(projects[0]));
+                        projects.forEach((proj) => {
+                            ensurePageSpace(estimateProjectHeight(proj));
+                            writeWrapped(proj.name, { bold: true, fontSize: pdfTheme.itemTitleSize, lineHeight: pdfTheme.itemTitleLineHeight, color: [31, 41, 55] });
+                            writeWrapped(proj.technologies, { fontSize: pdfTheme.compactSize, lineHeight: pdfTheme.compactLineHeight, color: pdfTheme.mutedColor });
+                            writeWrapped(proj.description, { fontSize: pdfTheme.bodySize, lineHeight: 14, color: pdfTheme.textColor });
+                            writeLinkLine(proj.link, proj.link, { fontSize: pdfTheme.bodySize });
+                            y += 6;
+                        });
+                    }
+
+                    if (awards.length > 0) {
+                        writeSectionWithKeep(t.awardsCertifications, estimateAwardHeight(awards[0]));
+                        awards.forEach((award) => {
+                            const awardTitle = [award.name, award.year].map(v => toStringSafe(v).trim()).filter(Boolean).join(' - ');
+                            ensurePageSpace(estimateAwardHeight(award));
+                            writeWrapped(awardTitle, { bold: true, fontSize: pdfTheme.itemTitleSize, lineHeight: pdfTheme.itemTitleLineHeight, color: [31, 41, 55] });
+                            writeWrapped(award.description, { fontSize: pdfTheme.bodySize, lineHeight: 14, color: pdfTheme.textColor });
+                            y += 6;
+                        });
+                    }
+
+                    doc.save(getSafePdfFileName());
+                } catch (error) {
+                    console.error('Text-based PDF export failed, using fallback:', error);
+                    showMessage(t.pdfExportFallback);
+                    exportToPdfImage();
+                }
+            };
+
             // Function to save all CV data (both locales) to a JSON file
             const saveCvToFile = () => {
                 try {
-                    const jsonString = JSON.stringify(cvDataByLocale, null, 2); // Pretty print JSON
+                    const exportPayload = {
+                        meta: {
+                            schemaVersion: CURRENT_SCHEMA_VERSION,
+                            exportedAt: new Date().toISOString(),
+                        },
+                        data: cvDataByLocale,
+                    };
+                    const jsonString = JSON.stringify(exportPayload, null, 2); // Pretty print JSON
                     const blob = new Blob([jsonString], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -704,12 +1601,15 @@
                 reader.onload = (e) => {
                     try {
                         const parsedData = JSON.parse(e.target.result);
-                        // Validate if the imported data has the expected structure (en, es keys)
-                        if (parsedData.en && parsedData.es) {
-                            setCvDataByLocale(parsedData);
-                            showMessage(t.loadSuccess);
+                        const { data: normalizedData, warnings } = normalizeImportedDataWithReport(parsedData);
+                        setCvDataByLocale(normalizedData);
+                        if (warnings.length > 0) {
+                            const warningPreview = warnings.slice(0, 2).join(' ');
+                            const moreCount = warnings.length - 2;
+                            const moreSuffix = moreCount > 0 ? ` (+${moreCount} more)` : '';
+                            showMessage(`${t.loadPartial} ${warningPreview}${moreSuffix}`);
                         } else {
-                            showMessage(t.loadError); // Data structure invalid
+                            showMessage(t.loadSuccess);
                         }
                     } catch (error) {
                         console.error("Error parsing CV data file:", error);
@@ -735,8 +1635,8 @@
                 setConfirmAction(() => () => {
                     // Reset all CV data for both locales to empty templates
                     setCvDataByLocale({
-                        en: { ...emptyCvDataTemplate },
-                        es: { ...emptyCvDataTemplate },
+                        en: createEmptyLocaleData(),
+                        es: createEmptyLocaleData(),
                     });
                     showMessage(t.newSessionStarted);
                     setShowConfirmModal(false); // Close modal after action
@@ -820,7 +1720,7 @@
                             {/* Personal Information */}
                             <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
                                 <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.personalInformation}</h2>
-                                {Object.keys(personalInfo).filter(key => key !== 'profilePicture' && key !== 'profilePictureWidth' && key !== 'profilePictureHeight').map((key) => ( // Exclude picture fields
+                                {Object.keys(personalInfo).filter(key => key !== 'profilePicture' && key !== 'profileFrameColor' && key !== 'profilePictureWidth' && key !== 'profilePictureHeight').map((key) => ( // Exclude picture fields
                                     <div className="mb-3" key={key}>
                                         <label htmlFor={key} className="block text-sm font-medium text-gray-700">
                                             {t[key]}: {/* Use translation for label */}
@@ -866,12 +1766,29 @@
                                             </button>
                                         )}
                                     </div>
+                                    <div className="mt-3">
+                                        <label htmlFor="profileFrameColor" className="block text-sm font-medium text-gray-700">
+                                            {t.profileFrameColor}:
+                                        </label>
+                                        <div className="mt-1 flex items-center gap-3">
+                                            <input
+                                                type="color"
+                                                id="profileFrameColor"
+                                                name="profileFrameColor"
+                                                value={personalInfo.profileFrameColor || '#bfdbfe'}
+                                                onChange={handlePersonalInfoChange}
+                                                className="h-10 w-16 cursor-pointer rounded border border-gray-300 bg-white p-1"
+                                            />
+                                            <span className="text-sm text-gray-500">{personalInfo.profileFrameColor || '#bfdbfe'}</span>
+                                        </div>
+                                    </div>
                                     {personalInfo.profilePicture && (
                                         <div className="mt-4 text-center">
                                             <img
-                                                src={personalInfo.profilePicture}
                                                 alt="Profile Preview"
-                                                className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-gray-300 shadow-md"
+                                                src={personalInfo.profilePicture}
+                                                className="w-24 h-24 rounded-full object-cover mx-auto border-2 shadow-md"
+                                                style={{ borderColor: personalInfo.profileFrameColor || '#bfdbfe' }}
                                             />
                                         </div>
                                     )}
@@ -1072,10 +1989,11 @@
                             <div className="mb-8 p-4 bg-white rounded-lg shadow-sm">
                                 <h2 className="text-xl font-semibold text-gray-700 mb-4">{t.skills}</h2>
                                 {Object.keys(skills).map((category) => {
+                                    const skillValues = Array.isArray(skills[category]) ? skills[category] : [];
                                     return (
                                         <div key={category} className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-                                            <h3 className="text-lg font-medium text-gray-700 mb-3">{t[category]}:</h3>
-                                            {skills[category].map((skill, index) => {
+                                            <h3 className="text-lg font-medium text-gray-700 mb-3">{formatCategoryLabel(category)}:</h3>
+                                            {skillValues.map((skill, index) => {
                                                 return (
                                                     <div key={index} className="flex items-center mb-2">
                                                         <input
@@ -1233,7 +2151,16 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    <span>{t.exportToPdf}</span>
+                                    <span>{t.exportToPdfText || t.exportToPdf}</span>
+                                </button>
+                                <button
+                                    onClick={exportToPdfImage}
+                                    className="w-full px-6 py-3 bg-slate-600 text-white text-lg font-semibold rounded-md hover:bg-slate-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm3 7l3-3 2 2 3-3 4 4" />
+                                    </svg>
+                                    <span>{t.exportToPdfImage || t.exportToPdf}</span>
                                 </button>
                                 <button
                                     onClick={saveCvToFile}
@@ -1270,7 +2197,10 @@
                                 {/* Personal Information */}
                                 <div className="text-center mb-6">
                                     {personalInfo.profilePicture && (
-                                        <div className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-blue-200 shadow-lg overflow-hidden flex items-center justify-center"> {/* Added flex for centering */}
+                                        <div
+                                            className="w-32 h-32 rounded-full mx-auto mb-4 border-4 shadow-lg overflow-hidden flex items-center justify-center"
+                                            style={{ borderColor: personalInfo.profileFrameColor || '#bfdbfe' }}
+                                        > {/* Added flex for centering */}
                                             <img
                                                 src={personalInfo.profilePicture}
                                                 alt="Profile"
@@ -1342,14 +2272,15 @@
                                 )}
 
                                 {/* Skills */}
-                                {Object.values(skills).some(arr => arr.length > 0 && arr.some(Boolean)) && (
+                                {Object.values(skills).some(arr => Array.isArray(arr) && arr.length > 0 && arr.some(Boolean)) && (
                                     <div className="mb-6">
                                         <h3 className="text-lg cv-section-title">{t.skills}</h3>
                                         {Object.keys(skills).map((category) => {
+                                            const skillValues = Array.isArray(skills[category]) ? skills[category] : [];
                                             return (
                                                 <div key={category} className="mb-4">
-                                                    <h3 className="text-lg font-medium text-gray-700 text-md">{t[category]}:</h3>
-                                                    {skills[category].map((skill, index) => {
+                                                    <h3 className="text-lg font-medium text-gray-700 text-md">{formatCategoryLabel(category)}:</h3>
+                                                    {skillValues.map((skill, index) => {
                                                         return (
                                                             <div key={index} className="flex items-center mb-2 no-break-inside">
                                                                 <p className="cv-item-subtitle text-sm mb-1">{skill}</p>

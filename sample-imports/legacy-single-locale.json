@@ -1,0 +1,24 @@
+{
+  "personalInfo": {
+    "name": "Legacy User",
+    "title": "Backend Developer",
+    "email": "legacy@example.com"
+  },
+  "summary": "Legacy payload without en/es locale wrapper.",
+  "skills": {
+    "programmingLanguages": "Go, Rust, Python",
+    "cloudPlatforms": ["AWS", "GCP"],
+    "dev_tools": {
+      "items": ["Git", "Docker", "Kubernetes"]
+    }
+  },
+  "projects": [
+    {
+      "id": "1",
+      "name": "Legacy API",
+      "technologies": "Go, PostgreSQL",
+      "description": "Legacy project format",
+      "link": "github.com/example/legacy-api"
+    }
+  ]
+}
