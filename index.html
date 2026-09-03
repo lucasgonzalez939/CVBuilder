@@ -1061,21 +1061,109 @@
                         }
                     };
 
+                    const forceBreakLongLine = (line, maxWidth) => {
+                        if (doc.getTextWidth(line) <= maxWidth) {
+                            return [line];
+                        }
+
+                        const chunks = [];
+                        let current = '';
+
+                        for (const char of line) {
+                            const candidate = `${current}${char}`;
+                            if (doc.getTextWidth(candidate) <= maxWidth) {
+                                current = candidate;
+                            } else {
+                                if (current) {
+                                    chunks.push(current);
+                                    current = char;
+                                } else {
+                                    // Safety guard for very narrow widths: keep progress character by character.
+                                    chunks.push(char);
+                                    current = '';
+                                }
+                            }
+                        }
+
+                        if (current) {
+                            chunks.push(current);
+                        }
+
+                        return chunks;
+                    };
+
+                    const getWrappedLines = (text, maxWidth) => {
+                        const value = toStringSafe(text).trim();
+                        if (!value) {
+                            return [];
+                        }
+
+                        const paragraphs = value.replace(/\r/g, '').split('\n');
+                        const wrappedLines = [];
+
+                        paragraphs.forEach((paragraph, paragraphIndex) => {
+                            const paragraphText = paragraph.trim();
+                            if (!paragraphText) {
+                                wrappedLines.push('');
+                                return;
+                            }
+
+                            const tokens = paragraphText.split(/\s+/).filter(Boolean);
+                            let currentLine = '';
+
+                            tokens.forEach((token) => {
+                                const candidate = currentLine ? `${currentLine} ${token}` : token;
+
+                                if (doc.getTextWidth(candidate) <= maxWidth) {
+                                    currentLine = candidate;
+                                    return;
+                                }
+
+                                if (currentLine) {
+                                    wrappedLines.push(currentLine);
+                                    currentLine = '';
+                                }
+
+                                if (doc.getTextWidth(token) <= maxWidth) {
+                                    currentLine = token;
+                                    return;
+                                }
+
+                                const forcedTokenLines = forceBreakLongLine(token, maxWidth);
+                                if (forcedTokenLines.length > 0) {
+                                    wrappedLines.push(...forcedTokenLines.slice(0, -1));
+                                    currentLine = forcedTokenLines[forcedTokenLines.length - 1];
+                                }
+                            });
+
+                            if (currentLine) {
+                                wrappedLines.push(currentLine);
+                            }
+
+                            if (paragraphIndex < paragraphs.length - 1) {
+                                wrappedLines.push('');
+                            }
+                        });
+
+                        return wrappedLines;
+                    };
+
                     const estimateWrappedHeight = (text, maxWidth, fontSize, lineHeight) => {
                         const value = toStringSafe(text).trim();
                         if (!value) {
                             return 0;
                         }
                         doc.setFontSize(fontSize);
-                        const lines = doc.splitTextToSize(value, maxWidth);
+                        const lines = getWrappedLines(value, maxWidth);
                         return lines.length * lineHeight;
                     };
 
                     const estimateBulletListHeight = (items, lineHeight = 14) => {
                         const cleanItems = items.map(item => toStringSafe(item).trim()).filter(Boolean);
                         return cleanItems.reduce((total, item) => {
+                            doc.setFont('helvetica', 'normal');
                             doc.setFontSize(pdfTheme.bodySize);
-                            const lines = doc.splitTextToSize(item, contentWidth - 14);
+                            const lines = getWrappedLines(item, contentWidth - 14);
                             return total + (lines.length * lineHeight);
                         }, 0);
                     };
@@ -1097,7 +1185,7 @@
                         doc.setFontSize(fontSize);
                         doc.setTextColor(...color);
 
-                        const lines = doc.splitTextToSize(value, maxWidth);
+                        const lines = getWrappedLines(value, maxWidth);
                         ensurePageSpace(lines.length * lineHeight + 2);
 
                         lines.forEach((line) => {
@@ -1141,14 +1229,18 @@
                         doc.setFontSize(fontSize);
                         doc.setTextColor(...pdfTheme.accentColor);
 
-                        ensurePageSpace(lineHeight + 2);
-                        doc.text(value, x, y);
-                        const width = doc.getTextWidth(value);
-                        doc.setDrawColor(...pdfTheme.accentColor);
-                        doc.setLineWidth(0.6);
-                        doc.line(x, y + 1.5, x + width, y + 1.5);
-                        doc.link(x, y - fontSize, width, lineHeight + 2, { url: href });
-                        y += lineHeight;
+                        const lines = getWrappedLines(value, contentWidth);
+                        ensurePageSpace((lines.length * lineHeight) + 2);
+
+                        lines.forEach((line) => {
+                            doc.text(line, x, y);
+                            const width = doc.getTextWidth(line);
+                            doc.setDrawColor(...pdfTheme.accentColor);
+                            doc.setLineWidth(0.6);
+                            doc.line(x, y + 1.5, x + width, y + 1.5);
+                            doc.link(x, y - fontSize, width, lineHeight + 2, { url: href });
+                            y += lineHeight;
+                        });
                     };
 
                     const writeSectionTitle = (title) => {
@@ -1343,7 +1435,7 @@
                                 return;
                             }
 
-                            const wrapped = doc.splitTextToSize(chunk.text, contentWidth);
+                            const wrapped = getWrappedLines(chunk.text, contentWidth);
                             wrapped.forEach((line, lineIndex) => {
                                 if (lineIndex > 0) {
                                     y += lineHeight;
@@ -1361,22 +1453,23 @@
                     };
 
                     const writeBulletList = (items) => {
+                        const bulletLineHeight = 14;
                         items
                             .map(item => toStringSafe(item).trim())
                             .filter(Boolean)
                             .forEach((item) => {
                                 const bulletX = margin + 4;
                                 const textX = margin + 14;
-                                const lines = doc.splitTextToSize(item, contentWidth - 14);
-                                ensurePageSpace((lines.length * 14) + 2);
                                 doc.setFont('helvetica', 'normal');
                                 doc.setFontSize(pdfTheme.bodySize);
+                                const lines = getWrappedLines(item, contentWidth - 14);
+                                ensurePageSpace((lines.length * bulletLineHeight) + 2);
                                 doc.setTextColor(...pdfTheme.textColor);
                                 doc.text('•', bulletX, y);
                                 lines.forEach((line, idx) => {
-                                    doc.text(line, textX, y + (idx * 14));
+                                    doc.text(line, textX, y + (idx * bulletLineHeight));
                                 });
-                                y += lines.length * 14;
+                                y += lines.length * bulletLineHeight;
                             });
                     };
 
