@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "schemaVersion": 2,
+    "usage": "LLM editing / project tailoring guidance",
+    "instructions": [
+      "Keep the full structure when editing this JSON.",
+      "The main source of truth is project.masterCv for the master CV and project.versions for tailored variants.",
+      "When adding a version-local skill or custom section, add it to the matching version localAdditions array and keep the master CV unchanged until synced.",
+      "Use the same object keys and nested shapes shown below; do not flatten arrays or rename the required IDs."
+    ]
+  },
+  "schema": {
+    "projectName": "string",
+    "defaultLocale": "en | es",
+    "masterCv": {
+      "en": {
+        "personalInfo": { "name": "string", "title": "string", "email": "string" },
+        "summary": "string",
+        "experiences": [{ "id": "string", "title": "string", "company": "string", "description": ["string"] }],
+        "education": [{ "id": "string", "degree": "string", "school": "string", "details": "string" }],
+        "skills": { "categoryName": ["string"] },
+        "projects": [{ "id": "string", "name": "string", "description": "string", "link": "string" }],
+        "awards": [{ "id": "string", "name": "string", "description": "string" }],
+        "customSections": [{ "id": "string", "title": "string", "items": ["string"] }]
+      },
+      "es": {}
+    },
+    "versions": [{
+      "id": "string",
+      "name": "string",
+      "visibility": {
+        "sections": { "summary": true, "experiences": true },
+        "hiddenExperienceIds": ["string"],
+        "hiddenProjectIds": ["string"],
+        "hiddenSkillCategories": ["string"],
+        "hiddenSkillItems": ["string"]
+      },
+      "focus": {
+        "primary": "string",
+        "secondary": ["string"],
+        "industry": "string"
+      },
+      "order": {
+        "experienceOrder": ["string"],
+        "projectOrder": ["string"]
+      },
+      "localAdditions": {
+        "skills": [{ "id": "string", "category": "string", "label": "string" }],
+        "customSections": [{ "id": "string", "title": "string", "items": ["string"] }]
+      }
+    }],
+    "activeVersionId": "string",
+    "updatedAt": "ISO date string"
+  },
+  "example": {
+    "projectName": "Example Project",
+    "defaultLocale": "en",
+    "masterCv": {
+      "en": {
+        "personalInfo": {
+          "name": "Ada Lovelace",
+          "title": "Senior Product Engineer",
+          "email": "ada@example.com"
+        },
+        "summary": "Product engineer focused on developer tooling and systems design.",
+        "experiences": [{
+          "id": "exp-1",
+          "title": "Senior Engineer",
+          "company": "Northstar Labs",
+          "description": [
+            "Built developer-facing tooling.",
+            "Improved release readiness metrics."
+          ]
+        }],
+        "skills": {
+          "programmingLanguages": ["JavaScript", "TypeScript"],
+          "frameworks": ["React", "Node.js"]
+        },
+        "projects": [{
+          "id": "proj-1",
+          "name": "Developer Portal",
+          "description": "Designed a KPI dashboard for internal product teams.",
+          "link": "https://example.com"
+        }],
+        "awards": [],
+        "customSections": []
+      }
+    },
+    "versions": [{
+      "id": "version-1",
+      "name": "Product focus",
+      "visibility": {
+        "sections": { "summary": true, "experiences": true, "skills": true, "projects": true },
+        "hiddenExperienceIds": [],
+        "hiddenProjectIds": [],
+        "hiddenSkillCategories": [],
+        "hiddenSkillItems": []
+      },
+      "focus": {
+        "primary": "Product engineering",
+        "secondary": ["Developer tools", "Platform"],
+        "industry": "SaaS"
+      },
+      "order": { "experienceOrder": ["exp-1"], "projectOrder": ["proj-1"] },
+      "localAdditions": { "skills": [], "customSections": [] }
+    }],
+    "activeVersionId": "version-1"
+  }
+}

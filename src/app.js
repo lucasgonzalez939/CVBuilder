@@ -42,6 +42,7 @@
         const App = () => {
             // State for current language (locale)
             const [locale, setLocale] = React.useState('en');
+            const [showTopBarMenu, setShowTopBarMenu] = React.useState(false);
             const t = translations[locale]; // Shorthand for translations based on current locale
 
             const initialProjectState = React.useMemo(() => {
@@ -689,6 +690,126 @@
                 event.target.value = null;
             };
 
+            const downloadLlmExampleJson = () => {
+                const examplePayload = {
+                    meta: {
+                        schemaVersion: 2,
+                        usage: 'LLM editing / project tailoring guidance',
+                        exportedAt: new Date().toISOString(),
+                        instructions: [
+                            'Keep the full structure when editing this JSON.',
+                            'The main source of truth is project.masterCv for the master CV and project.versions for tailored variants.',
+                            'When adding a version-local skill or custom section, add it to the matching version localAdditions array and keep the master CV unchanged until synced.',
+                            'Use the same object keys and nested shapes shown below; do not flatten arrays or rename the required IDs.'
+                        ]
+                    },
+                    schema: {
+                        projectName: 'string',
+                        defaultLocale: 'en | es',
+                        masterCv: {
+                            en: {
+                                personalInfo: { name: 'string', title: 'string', email: 'string' },
+                                summary: 'string',
+                                experiences: [{ id: 'string', title: 'string', company: 'string', description: ['string'] }],
+                                education: [{ id: 'string', degree: 'string', school: 'string', details: 'string' }],
+                                skills: { categoryName: ['string'] },
+                                projects: [{ id: 'string', name: 'string', description: 'string', link: 'string' }],
+                                awards: [{ id: 'string', name: 'string', description: 'string' }],
+                                customSections: [{ id: 'string', title: 'string', items: ['string'] }]
+                            },
+                            es: {}
+                        },
+                        versions: [{
+                            id: 'string',
+                            name: 'string',
+                            visibility: {
+                                sections: { summary: true, experiences: true },
+                                hiddenExperienceIds: ['string'],
+                                hiddenProjectIds: ['string'],
+                                hiddenSkillCategories: ['string'],
+                                hiddenSkillItems: ['string']
+                            },
+                            focus: {
+                                primary: 'string',
+                                secondary: ['string'],
+                                industry: 'string'
+                            },
+                            order: {
+                                experienceOrder: ['string'],
+                                projectOrder: ['string']
+                            },
+                            localAdditions: {
+                                skills: [{ id: 'string', category: 'string', label: 'string' }],
+                                customSections: [{ id: 'string', title: 'string', items: ['string'] }]
+                            }
+                        }],
+                        activeVersionId: 'string',
+                        updatedAt: 'ISO date string'
+                    },
+                    example: {
+                        projectName: 'Example Project',
+                        defaultLocale: 'en',
+                        masterCv: {
+                            en: {
+                                personalInfo: {
+                                    name: 'Ada Lovelace',
+                                    title: 'Senior Product Engineer',
+                                    email: 'ada@example.com'
+                                },
+                                summary: 'Product engineer focused on developer tooling and systems design.',
+                                experiences: [{
+                                    id: 'exp-1',
+                                    title: 'Senior Engineer',
+                                    company: 'Northstar Labs',
+                                    description: ['Built developer-facing tooling.', 'Improved release readiness metrics.']
+                                }],
+                                skills: {
+                                    programmingLanguages: ['JavaScript', 'TypeScript'],
+                                    frameworks: ['React', 'Node.js']
+                                },
+                                projects: [{
+                                    id: 'proj-1',
+                                    name: 'Developer Portal',
+                                    description: 'Designed a KPI dashboard for internal product teams.',
+                                    link: 'https://example.com'
+                                }],
+                                awards: [],
+                                customSections: []
+                            }
+                        },
+                        versions: [{
+                            id: 'version-1',
+                            name: 'Product focus',
+                            visibility: {
+                                sections: { summary: true, experiences: true, skills: true, projects: true },
+                                hiddenExperienceIds: [],
+                                hiddenProjectIds: [],
+                                hiddenSkillCategories: [],
+                                hiddenSkillItems: []
+                            },
+                            focus: {
+                                primary: 'Product engineering',
+                                secondary: ['Developer tools', 'Platform'],
+                                industry: 'SaaS'
+                            },
+                            order: { experienceOrder: ['exp-1'], projectOrder: ['proj-1'] },
+                            localAdditions: { skills: [], customSections: [] }
+                        }],
+                        activeVersionId: 'version-1'
+                    }
+                };
+
+                const blob = new Blob([JSON.stringify(examplePayload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'cv-builder-llm-example.json';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+            };
+
             // Generic update function for CV data based on current locale
             const updateCvData = (section, id, field, value, index = null) => {
                 setCvDataByLocale(prev => {
@@ -1138,24 +1259,44 @@
                         {/* Input Form Section */}
                         <div className="w-full md:w-1/2 p-6 bg-gray-50 border-r border-gray-200 overflow-y-auto max-h-[calc(100vh-2rem)]">
                             {/* Top Controls */}
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-4 sm:space-y-0 sm:space-x-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
                                 <h1 className="text-3xl font-bold text-gray-800 text-center sm:text-left flex-grow">{t.cvBuilder}</h1>
-                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                                <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
                                     <button
                                         onClick={() => setLocale('en')}
-                                        className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                        className={`px-3 py-2 rounded-md transition-colors text-sm font-medium ${locale === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                                     >
                                         {t.english}
                                     </button>
                                     <button
                                         onClick={() => setLocale('es')}
-                                        className={`px-4 py-2 rounded-md transition-colors w-full sm:w-auto ${locale === 'es' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                        className={`px-3 py-2 rounded-md transition-colors text-sm font-medium ${locale === 'es' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
                                     >
                                         {t.spanish}
                                     </button>
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTopBarMenu((prev) => !prev)}
+                                            className="px-3 py-2 rounded-md bg-slate-700 text-white hover:bg-slate-800 transition-colors text-sm font-medium"
+                                        >
+                                            {t.actions}
+                                        </button>
+                                        {showTopBarMenu && (
+                                            <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg z-20 overflow-hidden">
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); exportToPdf(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.exportToPdfText || t.exportToPdf}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); exportToPdfImage(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.exportToPdfImage || t.exportToPdf}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); saveCvToFile(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.exportCvSession}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); triggerImport(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.importCvSession}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); exportProjectBundle(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.exportProject}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); document.getElementById('projectBundleInput').click(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.importProject}</button>
+                                                <button type="button" onClick={() => { setShowTopBarMenu(false); downloadLlmExampleJson(); }} className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100">{t.downloadExampleJson}</button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={startNewSession}
-                                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-md w-full sm:w-auto"
+                                        className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-md text-sm font-medium"
                                     >
                                         {t.newSession}
                                     </button>
@@ -1962,33 +2103,6 @@
 
                             {/* Bottom Controls */}
                             <div className="mt-8 flex flex-col space-y-4">
-                                <button
-                                    onClick={exportToPdf}
-                                    className="w-full px-6 py-3 bg-blue-600 text-white text-lg font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>{t.exportToPdfText || t.exportToPdf}</span>
-                                </button>
-                                <button
-                                    onClick={exportToPdfImage}
-                                    className="w-full px-6 py-3 bg-slate-600 text-white text-lg font-semibold rounded-md hover:bg-slate-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm3 7l3-3 2 2 3-3 4 4" />
-                                    </svg>
-                                    <span>{t.exportToPdfImage || t.exportToPdf}</span>
-                                </button>
-                                <button
-                                    onClick={exportProjectBundle}
-                                    className="w-full px-6 py-3 bg-violet-600 text-white text-lg font-semibold rounded-md hover:bg-violet-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 18v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
-                                    </svg>
-                                    <span>Export Project</span>
-                                </button>
                                 <input
                                     type="file"
                                     ref={fileInputRef}
@@ -2003,33 +2117,6 @@
                                     onChange={importProjectBundle}
                                     accept=".json"
                                 />
-                                <button
-                                    onClick={saveCvToFile}
-                                    className="w-full px-6 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0-8V4m0 8h.01M12 4a2 2 0 00-2 2v4a2 2 0 002 2h4a2 2 0 002-2V6a2 2 0 00-2-2h-4z" />
-                                    </svg>
-                                    <span>{t.exportCvSession}</span>
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('projectBundleInput').click()}
-                                    className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    <span>Import Project</span>
-                                </button>
-                                <button
-                                    onClick={triggerImport}
-                                    className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    <span>{t.importCvSession}</span>
-                                </button>
                             </div>
                         </div>
 
