@@ -1,0 +1,51 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.cv-section-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cv-item-title {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.cv-item-subtitle {
+    font-weight: 400;
+    color: #4a5568;
+}
+
+.cv-item-dates {
+    font-weight: 300;
+    color: #718096;
+}
+
+.cv-description-list {
+    list-style-type: disc;
+    margin-left: 1.25rem;
+    color: #4a5568;
+}
+
+.cv-description-list li {
+    margin-bottom: 0.25rem;
+}
+
+.cv-skill-category {
+    font-weight: 500;
+    color: #2d3748;
+    margin-right: 0.5rem;
+}
+
+.cv-skill-list {
+    display: inline;
+    color: #4a5568;
+}
+
+.no-break-inside {
+    break-inside: avoid;
+}
