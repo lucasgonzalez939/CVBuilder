@@ -3,10 +3,19 @@
     "schemaVersion": 2,
     "usage": "LLM editing / project tailoring guidance",
     "instructions": [
-      "Keep the full structure when editing this JSON.",
-      "The main source of truth is project.masterCv for the master CV and project.versions for tailored variants.",
-      "When adding a version-local skill or custom section, add it to the matching version localAdditions array and keep the master CV unchanged until synced.",
-      "Use the same object keys and nested shapes shown below; do not flatten arrays or rename the required IDs."
+      "Keep the full object structure and all required keys when editing this JSON.",
+      "Master content lives in project.masterCv. Tailored CV variants live in project.versions.",
+      "Use stable IDs for array items (experiences, projects, awards, customSections). Do not regenerate IDs unless you are creating a new item.",
+      "To hide items for a tailored version, use visibility flags/lists on that version. Do not delete masterCv items.",
+      "To add version-only items, place them in version.localAdditions.skills or version.localAdditions.customSections.",
+      "When promoting a version-local addition to the master CV, copy it into masterCv and remove it from localAdditions.",
+      "Keep value types unchanged: strings stay strings, arrays stay arrays, and objects keep the same nested shape."
+    ],
+    "editChecklist": [
+      "1) Update masterCv for universal content.",
+      "2) Update versions[x].visibility/order/focus for tailoring.",
+      "3) Use localAdditions for version-only skills/sections.",
+      "4) Keep activeVersionId pointing to an existing version id."
     ]
   },
   "schema": {
@@ -53,7 +62,7 @@
     "updatedAt": "ISO date string"
   },
   "example": {
-    "projectName": "Example Project",
+    "projectName": "Example Product CV",
     "defaultLocale": "en",
     "masterCv": {
       "en": {
@@ -71,17 +80,53 @@
             "Built developer-facing tooling.",
             "Improved release readiness metrics."
           ]
+        }, {
+          "id": "exp-2",
+          "title": "Software Engineer",
+          "company": "Metric Forge",
+          "description": [
+            "Owned feature delivery for analytics workflows."
+          ]
         }],
         "skills": {
           "programmingLanguages": ["JavaScript", "TypeScript"],
-          "frameworks": ["React", "Node.js"]
+          "frameworks": ["React", "Node.js"],
+          "tools": ["Docker", "GitHub Actions"]
         },
         "projects": [{
           "id": "proj-1",
           "name": "Developer Portal",
           "description": "Designed a KPI dashboard for internal product teams.",
           "link": "https://example.com"
+        }, {
+          "id": "proj-2",
+          "name": "Experiment Tracker",
+          "description": "Created an experimentation tracker used by product and growth teams.",
+          "link": "https://example.com/experiments"
         }],
+        "awards": [],
+        "customSections": [{
+          "id": "custom-1",
+          "title": "Public Speaking",
+          "items": [
+            "Speaker at ProductConf 2025",
+            "Internal workshop facilitator"
+          ]
+        }]
+      },
+      "es": {
+        "personalInfo": {
+          "name": "Ada Lovelace",
+          "title": "Ingeniera de Producto Senior",
+          "email": "ada@example.com"
+        },
+        "summary": "Ingeniera de producto enfocada en tooling para desarrolladores y diseno de sistemas.",
+        "experiences": [],
+        "education": [],
+        "skills": {
+          "programmingLanguages": ["JavaScript", "TypeScript"]
+        },
+        "projects": [],
         "awards": [],
         "customSections": []
       }
@@ -90,19 +135,69 @@
       "id": "version-1",
       "name": "Product focus",
       "visibility": {
-        "sections": { "summary": true, "experiences": true, "skills": true, "projects": true },
-        "hiddenExperienceIds": [],
-        "hiddenProjectIds": [],
+        "sections": {
+          "summary": true,
+          "experiences": true,
+          "education": false,
+          "skills": true,
+          "projects": true,
+          "awards": false,
+          "customSections": true
+        },
+        "hiddenExperienceIds": ["exp-2"],
+        "hiddenProjectIds": ["proj-2"],
         "hiddenSkillCategories": [],
-        "hiddenSkillItems": []
+        "hiddenSkillItems": ["Docker"]
       },
       "focus": {
         "primary": "Product engineering",
         "secondary": ["Developer tools", "Platform"],
         "industry": "SaaS"
       },
-      "order": { "experienceOrder": ["exp-1"], "projectOrder": ["proj-1"] },
-      "localAdditions": { "skills": [], "customSections": [] }
+      "order": { "experienceOrder": ["exp-1", "exp-2"], "projectOrder": ["proj-1", "proj-2"] },
+      "localAdditions": {
+        "skills": [{
+          "id": "skill-local-1",
+          "category": "product",
+          "label": "Roadmapping"
+        }],
+        "customSections": [{
+          "id": "custom-local-1",
+          "title": "Target Role Notes",
+          "items": [
+            "Focus this CV on B2B product organizations.",
+            "Prioritize outcomes over implementation detail."
+          ]
+        }]
+      }
+    }, {
+      "id": "version-2",
+      "name": "Platform focus",
+      "visibility": {
+        "sections": {
+          "summary": true,
+          "experiences": true,
+          "education": true,
+          "skills": true,
+          "projects": true,
+          "awards": true,
+          "customSections": true
+        },
+        "hiddenExperienceIds": [],
+        "hiddenProjectIds": [],
+        "hiddenSkillCategories": [],
+        "hiddenSkillItems": []
+      },
+      "focus": {
+        "primary": "Platform engineering",
+        "secondary": ["Reliability", "Internal developer experience"],
+        "industry": "Infrastructure"
+      },
+      "order": { "experienceOrder": ["exp-2", "exp-1"], "projectOrder": ["proj-2", "proj-1"] },
+      "localAdditions": {
+        "skills": [],
+        "customSections": []
+      }
     }],
     "activeVersionId": "version-1"
   }
