@@ -27,28 +27,103 @@
             savePersistedCvData,
         } = window.CVStorageService;
 
+        const {
+            buildDefaultProject,
+            createVersion,
+            getDerivedProjectView,
+            loadPersistedProjectData,
+            normalizeProjectBundle,
+            reorderVersionItems,
+            savePersistedProjectData,
+            syncVersionLocalAdditionToMaster,
+        } = window.CVProjectService;
+
         // Main App component for the CV Builder
         const App = () => {
             // State for current language (locale)
             const [locale, setLocale] = React.useState('en');
             const t = translations[locale]; // Shorthand for translations based on current locale
 
+            const initialProjectState = React.useMemo(() => {
+                return loadPersistedProjectData({
+                    fallbackProject: buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: initialCvDataByLocale,
+                        defaultLocale: 'en',
+                    }),
+                    storageKey: 'cvProject',
+                    legacyStorageKey: 'cvData',
+                });
+            }, []);
 
             // Function to get initial data from local storage or use defaults
             const getInitialData = () => {
-                return loadPersistedCvData({
-                    fallbackData: initialCvDataByLocale,
-                    storageKey: 'cvData',
+                const persistedProject = loadPersistedProjectData({
+                    fallbackProject: buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: initialCvDataByLocale,
+                        defaultLocale: 'en',
+                    }),
+                    storageKey: 'cvProject',
+                    legacyStorageKey: 'cvData',
                 });
+
+                return persistedProject.project.masterCv || initialCvDataByLocale;
             };
 
             // State variables to hold CV data for both locales
             const [cvDataByLocale, setCvDataByLocale] = React.useState(getInitialData);
-            // State variables to hold CV data for both locales
-            //const [cvDataByLocale, setCvDataByLocale] = React.useState(initialCvDataByLocale);
+            const [projectState, setProjectState] = React.useState(initialProjectState);
+
+            const availableVersions = projectState?.project?.versions || [];
+            const activeVersion = availableVersions.find(version => version.id === projectState?.project?.activeVersionId) || availableVersions[0] || null;
+            const derivedProjectView = getDerivedProjectView({ project: projectState?.project || buildDefaultProject({ projectName: 'Main CV Project', masterCv: cvDataByLocale, defaultLocale: locale }).project, locale });
+            const derivedLocaleData = derivedProjectView.derivedLocaleData || cvDataByLocale[locale];
+
+            const versionExperienceItems = React.useMemo(() => {
+                const masterItems = Array.isArray(projectState?.project?.masterCv?.[locale]?.experiences) ? projectState.project.masterCv[locale].experiences : [];
+                const localItems = Array.isArray(activeVersion?.localAdditions?.experiences) ? activeVersion.localAdditions.experiences : [];
+                return [...masterItems, ...localItems];
+            }, [projectState, locale, activeVersion]);
+
+            const versionProjectItems = React.useMemo(() => {
+                const masterItems = Array.isArray(projectState?.project?.masterCv?.[locale]?.projects) ? projectState.project.masterCv[locale].projects : [];
+                const localItems = Array.isArray(activeVersion?.localAdditions?.projects) ? activeVersion.localAdditions.projects : [];
+                return [...masterItems, ...localItems];
+            }, [projectState, locale, activeVersion]);
+
+            const versionSkillGroups = React.useMemo(() => {
+                const masterGroups = projectState?.project?.masterCv?.[locale]?.skills || {};
+                const merged = { ...masterGroups };
+                (activeVersion?.localAdditions?.skills || []).forEach((entry) => {
+                    if (!entry || !entry.category) {
+                        return;
+                    }
+                    merged[entry.category] = [...(Array.isArray(merged[entry.category]) ? merged[entry.category] : []), entry.label];
+                });
+                return merged;
+            }, [projectState, locale, activeVersion]);
+
+            const versionSectionEntries = React.useMemo(() => [
+                { key: 'summary', label: 'Summary' },
+                { key: 'experiences', label: 'Experience' },
+                { key: 'education', label: 'Education' },
+                { key: 'skills', label: 'Skills' },
+                { key: 'projects', label: 'Projects' },
+                { key: 'awards', label: 'Awards' },
+                { key: 'customSections', label: 'Custom Sections' },
+            ], []);
+
+            const visibleSectionCount = React.useMemo(() => {
+                if (!activeVersion || !activeVersion.visibility || !activeVersion.visibility.sections) {
+                    return versionSectionEntries.length;
+                }
+
+                return versionSectionEntries.filter(({ key }) => activeVersion.visibility.sections[key] !== false).length;
+            }, [activeVersion, versionSectionEntries]);
 
             // Destructure current locale's CV data for easier access
-            const { personalInfo, summary, experiences, education, skills, projects, awards, customSections } = cvDataByLocale[locale];
+            const { personalInfo, summary, experiences, education, skills, projects, awards, customSections } = derivedLocaleData;
 
             const formatCategoryLabel = (category) => {
                 if (t[category]) {
@@ -76,6 +151,9 @@
             const [showConfirmModal, setShowConfirmModal] = React.useState(false);
             const [confirmAction, setConfirmAction] = React.useState(null); // Function to execute on confirm
             const [newSkillCategoryName, setNewSkillCategoryName] = React.useState('');
+            const [newVersionSkillCategory, setNewVersionSkillCategory] = React.useState('');
+            const [newVersionSkillName, setNewVersionSkillName] = React.useState('');
+            const [newVersionSectionTitle, setNewVersionSectionTitle] = React.useState('');
 
 
             // Auto-save effect to save data to local storage whenever cvDataByLocale changes
@@ -85,10 +163,38 @@
                     storageKey: 'cvData',
                 });
 
+                const projectSaveResult = savePersistedProjectData({
+                    project: {
+                        ...(projectState.project || {}),
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                        updatedAt: new Date().toISOString(),
+                    },
+                    storageKey: 'cvProject',
+                });
+
                 if (!saveResult.ok) {
                     console.error("Failed to save data to local storage:", saveResult.error);
                 }
-            }, [cvDataByLocale]); // This effect runs whenever cvDataByLocale changes
+
+                if (!projectSaveResult.ok) {
+                    console.error("Failed to save project data to local storage:", projectSaveResult.error);
+                }
+
+                setProjectState(prev => ({
+                    ...(prev || buildDefaultProject({ masterCv: cvDataByLocale, defaultLocale: locale })),
+                    meta: {
+                        ...(prev?.meta || {}),
+                        exportedAt: new Date().toISOString(),
+                    },
+                    project: {
+                        ...((prev && prev.project) || buildDefaultProject({ masterCv: cvDataByLocale, defaultLocale: locale }).project),
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                        updatedAt: new Date().toISOString(),
+                    },
+                }));
+            }, [cvDataByLocale, locale]); // This effect runs whenever cvDataByLocale changes
 
             // Function to display custom messages
             const showMessage = (msg) => {
@@ -98,6 +204,489 @@
                     setIsMessageVisible(false);
                     setMessage('');
                 }, 3000); // Message disappears after 3 seconds
+            };
+
+            const updateActiveVersion = (updater) => {
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = Array.isArray(project.versions) ? project.versions.map(version => updater(version) || version) : [];
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                            activeVersionId: project.activeVersionId,
+                        },
+                    };
+                });
+            };
+
+            const handleSelectVersion = (versionId) => {
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            activeVersionId: versionId,
+                        },
+                    };
+                });
+            };
+
+            const updateVersionVisibility = (updater) => {
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = (project.versions || []).map(version => version.id === project.activeVersionId ? updater(version) : version);
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                        },
+                    };
+                });
+            };
+
+            const toggleVersionSection = (sectionKey, nextValue) => {
+                updateVersionVisibility(version => ({
+                    ...version,
+                    visibility: {
+                        ...(version.visibility || {}),
+                        sections: {
+                            ...(version.visibility && version.visibility.sections ? version.visibility.sections : {}),
+                            [sectionKey]: nextValue,
+                        },
+                    },
+                    updatedAt: new Date().toISOString(),
+                }));
+            };
+
+            const updateVersionFocus = (field, value) => {
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = (project.versions || []).map(version => version.id === project.activeVersionId ? {
+                        ...version,
+                        focus: {
+                            ...(version.focus || {}),
+                            [field]: value,
+                        },
+                        updatedAt: new Date().toISOString(),
+                    } : version);
+
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                        },
+                    };
+                });
+            };
+
+            const moveVersionItem = (sectionKey, itemId, direction) => {
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    return reorderVersionItems({
+                        project: prev,
+                        versionId: project.activeVersionId,
+                        sectionKey,
+                        itemId,
+                        direction,
+                    });
+                });
+            };
+
+            const toggleVersionSkillCategory = (category, nextValue) => {
+                updateVersionVisibility(version => {
+                    const visibility = version.visibility || {};
+                    const hiddenList = Array.isArray(visibility.hiddenSkillCategories) ? [...visibility.hiddenSkillCategories] : [];
+                    const nextHiddenList = nextValue ? hiddenList.filter(item => item !== category) : Array.from(new Set([...hiddenList, category]));
+
+                    return {
+                        ...version,
+                        visibility: {
+                            ...visibility,
+                            hiddenSkillCategories: nextHiddenList,
+                        },
+                        updatedAt: new Date().toISOString(),
+                    };
+                });
+            };
+
+            const toggleVersionSkillItem = (skillValue, nextValue) => {
+                updateVersionVisibility(version => {
+                    const visibility = version.visibility || {};
+                    const hiddenList = Array.isArray(visibility.hiddenSkillItems) ? [...visibility.hiddenSkillItems] : [];
+                    const nextHiddenList = nextValue ? hiddenList.filter(item => item !== skillValue) : Array.from(new Set([...hiddenList, skillValue]));
+
+                    return {
+                        ...version,
+                        visibility: {
+                            ...visibility,
+                            hiddenSkillItems: nextHiddenList,
+                        },
+                        updatedAt: new Date().toISOString(),
+                    };
+                });
+            };
+
+            const toggleVersionItemVisibility = (sectionKey, itemId, nextValue) => {
+                updateVersionVisibility(version => {
+                    const visibility = version.visibility || {};
+                    const hiddenKeyMap = {
+                        experiences: 'hiddenExperienceIds',
+                        projects: 'hiddenProjectIds',
+                        customSections: 'hiddenCustomSectionIds',
+                    };
+
+                    if (sectionKey === 'skills') {
+                        return {
+                            ...version,
+                            visibility: {
+                                ...visibility,
+                                hiddenSkillItems: nextValue
+                                    ? (Array.isArray(visibility.hiddenSkillItems) ? visibility.hiddenSkillItems.filter(item => item !== itemId) : [])
+                                    : Array.from(new Set([...(Array.isArray(visibility.hiddenSkillItems) ? visibility.hiddenSkillItems : []), itemId])),
+                            },
+                            updatedAt: new Date().toISOString(),
+                        };
+                    }
+
+                    const hiddenKey = hiddenKeyMap[sectionKey] || null;
+                    if (!hiddenKey) {
+                        return version;
+                    }
+
+                    const hiddenList = Array.isArray(visibility[hiddenKey]) ? [...visibility[hiddenKey]] : [];
+                    const nextHiddenList = nextValue ? hiddenList.filter(id => id !== itemId) : Array.from(new Set([...hiddenList, itemId]));
+
+                    return {
+                        ...version,
+                        visibility: {
+                            ...visibility,
+                            [hiddenKey]: nextHiddenList,
+                        },
+                        updatedAt: new Date().toISOString(),
+                    };
+                });
+            };
+
+            const handleCreateVersion = () => {
+                const nextVersionNumber = (projectState?.project?.versions || []).length + 1;
+                const nextVersion = createVersion({
+                    name: `Version ${nextVersionNumber}`,
+                    slug: `version-${nextVersionNumber}`,
+                    isDefault: false,
+                });
+
+                setProjectState(prev => {
+                    const baseProject = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = [...(baseProject.versions || []), nextVersion];
+                    return {
+                        ...prev,
+                        project: {
+                            ...baseProject,
+                            versions: nextVersions,
+                            activeVersionId: nextVersion.id,
+                        },
+                    };
+                });
+                showMessage(t.newVersionCreated);
+            };
+
+            const handleRenameVersion = (versionId) => {
+                const currentVersion = (projectState?.project?.versions || []).find(version => version.id === versionId);
+                if (!currentVersion) {
+                    return;
+                }
+
+                const nextName = window.prompt(t.versionRenamePrompt, currentVersion.name);
+                if (!nextName || !nextName.trim()) {
+                    return;
+                }
+
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: (project.versions || []).map(version => version.id === versionId
+                                ? { ...version, name: nextName.trim(), slug: version.slug || nextName.trim().toLowerCase().replace(/\s+/g, '-'), updatedAt: new Date().toISOString() }
+                                : version),
+                        },
+                    };
+                });
+            };
+
+            const handleDuplicateVersion = (versionId) => {
+                const sourceVersion = (projectState?.project?.versions || []).find(version => version.id === versionId);
+                if (!sourceVersion) {
+                    return;
+                }
+
+                const duplicatedVersion = createVersion({
+                    ...sourceVersion,
+                    id: `version-${Date.now()}`,
+                    name: `${sourceVersion.name} Copy`,
+                    slug: `${sourceVersion.slug || sourceVersion.name}-copy-${Date.now()}`,
+                    isDefault: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                });
+
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = [...(project.versions || []), duplicatedVersion];
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                            activeVersionId: duplicatedVersion.id,
+                        },
+                    };
+                });
+                showMessage(t.versionDuplicated);
+            };
+
+            const handleDeleteVersion = (versionId) => {
+                if ((projectState?.project?.versions || []).length <= 1) {
+                    showMessage(t.atLeastOneVersion);
+                    return;
+                }
+
+                if (!window.confirm(t.versionDeleteConfirm)) {
+                    return;
+                }
+
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = (project.versions || []).filter(version => version.id !== versionId);
+                    const fallbackActive = nextVersions[0]?.id || versionId;
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                            activeVersionId: fallbackActive,
+                        },
+                    };
+                });
+                showMessage(t.versionDeleted);
+            };
+
+            const syncVersionLocalAdditionToMasterInApp = (sectionKey, itemId) => {
+                const version = activeVersion;
+                if (!version || !version.localAdditions || !Array.isArray(version.localAdditions[sectionKey])) {
+                    return;
+                }
+
+                const targetItem = version.localAdditions[sectionKey].find(item => item.id === itemId);
+                if (!targetItem) {
+                    return;
+                }
+
+                setProjectState(prev => {
+                    const nextProject = syncVersionLocalAdditionToMaster({
+                        project: prev,
+                        versionId: version.id,
+                        sectionKey,
+                        itemId,
+                    });
+                    return nextProject;
+                });
+
+                setCvDataByLocale(prev => {
+                    const nextLocaleData = { ...prev };
+                    const localeData = { ...(nextLocaleData[locale] || createEmptyLocaleData()) };
+
+                    if (sectionKey === 'skills') {
+                        const category = targetItem.category || 'General';
+                        localeData.skills = {
+                            ...(localeData.skills || {}),
+                            [category]: [...(Array.isArray(localeData.skills?.[category]) ? localeData.skills[category] : []), targetItem.label],
+                        };
+                    } else if (Array.isArray(localeData[sectionKey])) {
+                        localeData[sectionKey] = [...localeData[sectionKey], targetItem];
+                    } else if (sectionKey === 'customSections' && Array.isArray(targetItem.items)) {
+                        localeData.customSections = [...(localeData.customSections || []), targetItem];
+                    }
+
+                    nextLocaleData[locale] = localeData;
+                    return nextLocaleData;
+                });
+            };
+
+            const addVersionLocalSkill = () => {
+                if (!newVersionSkillName.trim()) {
+                    return;
+                }
+
+                const category = (newVersionSkillCategory || 'General').trim() || 'General';
+                const newSkill = {
+                    id: `skill_local_${Date.now()}`,
+                    category,
+                    label: newVersionSkillName.trim(),
+                    source: 'version',
+                    status: 'pending_sync',
+                };
+
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = (project.versions || []).map(version => version.id === project.activeVersionId ? {
+                        ...version,
+                        localAdditions: {
+                            ...(version.localAdditions || {}),
+                            skills: [...(Array.isArray(version.localAdditions?.skills) ? version.localAdditions.skills : []), newSkill],
+                        },
+                        updatedAt: new Date().toISOString(),
+                    } : version);
+
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                        },
+                    };
+                });
+
+                setNewVersionSkillName('');
+                setNewVersionSkillCategory('');
+            };
+
+            const addVersionLocalCustomSection = () => {
+                if (!newVersionSectionTitle.trim()) {
+                    return;
+                }
+
+                const newSection = {
+                    id: `custom_local_${Date.now()}`,
+                    title: newVersionSectionTitle.trim(),
+                    items: [],
+                    source: 'version',
+                    status: 'pending_sync',
+                };
+
+                setProjectState(prev => {
+                    const project = prev && prev.project ? prev.project : buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: cvDataByLocale,
+                        defaultLocale: locale,
+                    }).project;
+
+                    const nextVersions = (project.versions || []).map(version => version.id === project.activeVersionId ? {
+                        ...version,
+                        localAdditions: {
+                            ...(version.localAdditions || {}),
+                            customSections: [...(Array.isArray(version.localAdditions?.customSections) ? version.localAdditions.customSections : []), newSection],
+                        },
+                        updatedAt: new Date().toISOString(),
+                    } : version);
+
+                    return {
+                        ...prev,
+                        project: {
+                            ...project,
+                            versions: nextVersions,
+                        },
+                    };
+                });
+
+                setNewVersionSectionTitle('');
+            };
+
+            const exportProjectBundle = () => {
+                const payload = projectState && projectState.project ? projectState : buildDefaultProject({
+                    projectName: 'Main CV Project',
+                    masterCv: cvDataByLocale,
+                    defaultLocale: locale,
+                });
+
+                const jsonString = JSON.stringify(payload, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${(payload.project?.name || 'cv-project').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'cv-project'}.json`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+            };
+
+            const importProjectBundle = async (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                try {
+                    const fileText = await file.text();
+                    const parsed = JSON.parse(fileText);
+                    const normalizedProject = normalizeProjectBundle(parsed);
+                    const importedMasterData = normalizedProject.project.masterCv || cvDataByLocale;
+                    setProjectState(normalizedProject);
+                    setCvDataByLocale(importedMasterData);
+                    showMessage(t.projectBundleImported);
+                } catch (error) {
+                    console.error('Failed to import project bundle:', error);
+                    showMessage(t.projectBundleImportFailed);
+                }
+
+                event.target.value = null;
             };
 
             // Generic update function for CV data based on current locale
@@ -413,8 +1002,13 @@
             };
 
             const exportToPdf = async () => {
+                const exportData = {
+                    ...cvDataByLocale,
+                    [locale]: derivedLocaleData,
+                };
+
                 await exportToPdfText({
-                    cvDataByLocale,
+                    cvDataByLocale: exportData,
                     locale,
                     t,
                     formatCategoryLabel,
@@ -478,11 +1072,17 @@
                 // Show confirmation modal before clearing data
                 setShowConfirmModal(true);
                 setConfirmAction(() => () => {
-                    // Reset all CV data for both locales to empty templates
-                    setCvDataByLocale({
+                    const nextEmptyData = {
                         en: createEmptyLocaleData(),
                         es: createEmptyLocaleData(),
-                    });
+                    };
+
+                    setCvDataByLocale(nextEmptyData);
+                    setProjectState(buildDefaultProject({
+                        projectName: 'Main CV Project',
+                        masterCv: nextEmptyData,
+                        defaultLocale: locale,
+                    }));
                     showMessage(t.newSessionStarted);
                     setShowConfirmModal(false); // Close modal after action
                 });
@@ -538,7 +1138,7 @@
                         {/* Input Form Section */}
                         <div className="w-full md:w-1/2 p-6 bg-gray-50 border-r border-gray-200 overflow-y-auto max-h-[calc(100vh-2rem)]">
                             {/* Top Controls */}
-                            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-4 sm:space-y-0 sm:space-x-4">
                                 <h1 className="text-3xl font-bold text-gray-800 text-center sm:text-left flex-grow">{t.cvBuilder}</h1>
                                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                                     <button
@@ -560,6 +1160,288 @@
                                         {t.newSession}
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                <div className="flex items-center justify-between gap-3 mb-3">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-gray-700">{t.versions}</h2>
+                                        {activeVersion && (
+                                            <p className="mt-1 text-xs text-gray-500">{t.active}: <span className="font-medium text-gray-700">{activeVersion.name}</span></p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={handleCreateVersion}
+                                        className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
+                                    >
+                                        + {t.newVersion}
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {(availableVersions.length > 0 ? availableVersions : []).map((version) => {
+                                        const isActive = projectState?.project?.activeVersionId === version.id;
+                                        return (
+                                            <div key={version.id} className={`flex items-center rounded-lg border shadow-sm transition-colors ${isActive ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-blue-100' : 'border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                                                <button
+                                                    onClick={() => handleSelectVersion(version.id)}
+                                                    className="px-3 py-2 text-sm font-medium rounded-l-lg hover:bg-blue-100"
+                                                >
+                                                    {version.name}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRenameVersion(version.id)}
+                                                    className="px-2 py-2 text-xs border-l border-gray-200 hover:bg-gray-200"
+                                                    title={t.renameVersion}
+                                                >
+                                                    ✎
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDuplicateVersion(version.id)}
+                                                    className="px-2 py-2 text-xs border-l border-gray-200 hover:bg-gray-200"
+                                                    title={t.duplicateVersion}
+                                                >
+                                                    ⧉
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteVersion(version.id)}
+                                                    className="px-2 py-2 text-xs border-l border-gray-200 hover:bg-red-100 hover:text-red-700 rounded-r-lg"
+                                                    title={t.deleteVersion}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {activeVersion && (
+                                    <div className="mt-4 grid gap-3">
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-sm font-semibold text-gray-700">{t.versionFilters}</h3>
+                                                <span className="text-[11px] uppercase tracking-wide text-gray-500">{visibleSectionCount}/{versionSectionEntries.length} {t.visible}</span>
+                                            </div>
+
+                                            <div className="flex justify-end gap-2 mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => Object.keys({ summary: 'Summary', experiences: 'Experience', education: 'Education', skills: 'Skills', projects: 'Projects', awards: 'Awards', customSections: 'Custom Sections' }).forEach((sectionKey) => toggleVersionSection(sectionKey, true))}
+                                                    className="px-2 py-1 rounded-md text-[11px] font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                                >
+                                                    {t.showAll}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => Object.keys({ summary: 'Summary', experiences: 'Experience', education: 'Education', skills: 'Skills', projects: 'Projects', awards: 'Awards', customSections: 'Custom Sections' }).forEach((sectionKey) => toggleVersionSection(sectionKey, false))}
+                                                    className="px-2 py-1 rounded-md text-[11px] font-medium bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                                >
+                                                    {t.hideAll}
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 gap-2 text-sm">
+                                                {versionSectionEntries.map(({ key, label }) => {
+                                                    const isVisible = Boolean(activeVersion.visibility?.sections?.[key] ?? true);
+                                                    return (
+                                                        <div key={key} className="flex items-center justify-between gap-3 rounded-md bg-white border border-gray-200 px-3 py-2">
+                                                            <span className="font-medium text-gray-700">{label}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => toggleVersionSection(key, !isVisible)}
+                                                                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${isVisible ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                                                            >
+                                                                {isVisible ? t.show : t.hide}
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t.versionFocus}</p>
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    value={activeVersion.focus?.primary || ''}
+                                                    onChange={(event) => updateVersionFocus('primary', event.target.value)}
+                                                    placeholder={t.primaryFocus}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={(activeVersion.focus?.secondary || []).join(', ')}
+                                                    onChange={(event) => updateVersionFocus('secondary', event.target.value.split(',').map(item => item.trim()).filter(Boolean))}
+                                                    placeholder={t.secondaryFocuses}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={activeVersion.focus?.industry || ''}
+                                                    onChange={(event) => updateVersionFocus('industry', event.target.value)}
+                                                    placeholder={t.industry}
+                                                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t.visibleExperienceItems}</p>
+                                            <div className="space-y-2">
+                                                {versionExperienceItems.length > 0 ? versionExperienceItems.map((exp) => {
+                                                    const isVisible = !((activeVersion.visibility && Array.isArray(activeVersion.visibility.hiddenExperienceIds) && activeVersion.visibility.hiddenExperienceIds.includes(exp.id)) || false);
+                                                    return (
+                                                        <div key={exp.id} className={`flex items-center justify-between gap-2 text-sm p-2 rounded-md border ${isVisible ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200 opacity-60'}`}>
+                                                            <span className="truncate font-medium text-gray-700">{exp.title || exp.company || `Experience ${exp.id}`}</span>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <button type="button" onClick={() => moveVersionItem('experiences', exp.id, -1)} className="px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-100" title={t.moveEarlier}>↑</button>
+                                                                <button type="button" onClick={() => moveVersionItem('experiences', exp.id, 1)} className="px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-100" title={t.moveLater}>↓</button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleVersionItemVisibility('experiences', exp.id, !isVisible)}
+                                                                    className={`px-2 py-1 rounded-md text-xs font-medium ${isVisible ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                                                                >
+                                                                    {isVisible ? t.hide : t.show}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }) : <p className="text-xs text-gray-500">{t.noExperienceItemsInVersion}</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t.visibleProjectItems}</p>
+                                            <div className="space-y-2">
+                                                {versionProjectItems.length > 0 ? versionProjectItems.map((projectItem) => {
+                                                    const isVisible = !((activeVersion.visibility && Array.isArray(activeVersion.visibility.hiddenProjectIds) && activeVersion.visibility.hiddenProjectIds.includes(projectItem.id)) || false);
+                                                    return (
+                                                        <div key={projectItem.id} className={`flex items-center justify-between gap-2 text-sm p-2 rounded-md border ${isVisible ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200 opacity-60'}`}>
+                                                            <span className="truncate font-medium text-gray-700">{projectItem.name || `Project ${projectItem.id}`}</span>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <button type="button" onClick={() => moveVersionItem('projects', projectItem.id, -1)} className="px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-100" title={t.moveEarlier}>↑</button>
+                                                                <button type="button" onClick={() => moveVersionItem('projects', projectItem.id, 1)} className="px-2 py-1 border border-gray-300 rounded-md text-xs hover:bg-gray-100" title={t.moveLater}>↓</button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleVersionItemVisibility('projects', projectItem.id, !isVisible)}
+                                                                    className={`px-2 py-1 rounded-md text-xs font-medium ${isVisible ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                                                                >
+                                                                    {isVisible ? t.hide : t.show}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }) : <p className="text-xs text-gray-500">{t.noProjectItemsInVersion}</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{t.skillCategoriesAndItems}</p>
+                                            <div className="space-y-2">
+                                                {Object.keys(versionSkillGroups || {}).map((category) => {
+                                                    const categoryItems = Array.isArray(versionSkillGroups[category]) ? versionSkillGroups[category] : [];
+                                                    const isCategoryVisible = !((activeVersion.visibility && Array.isArray(activeVersion.visibility.hiddenSkillCategories) && activeVersion.visibility.hiddenSkillCategories.includes(category)) || false);
+                                                    return (
+                                                        <div key={category} className={`rounded-md border p-2 ${isCategoryVisible ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-100 opacity-70'}`}>
+                                                            <div className="flex items-center justify-between gap-2 mb-2">
+                                                                <span className="text-sm font-medium text-gray-700">{formatCategoryLabel(category)}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleVersionSkillCategory(category, !isCategoryVisible)}
+                                                                    className={`px-2 py-1 rounded-md text-xs font-medium ${isCategoryVisible ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                                                                >
+                                                                    {isCategoryVisible ? t.hide : t.show}
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="space-y-1 pl-2">
+                                                                {categoryItems.length > 0 ? categoryItems.map((skillValue) => {
+                                                                    const isVisible = !((activeVersion.visibility && Array.isArray(activeVersion.visibility.hiddenSkillItems) && activeVersion.visibility.hiddenSkillItems.includes(skillValue)) || false);
+                                                                    return (
+                                                                        <div key={`${category}-${skillValue}`} className={`flex items-center justify-between gap-2 text-sm ${isVisible ? '' : 'opacity-60'}`}>
+                                                                            <span className="truncate">{skillValue}</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => toggleVersionItemVisibility('skills', skillValue, !isVisible)}
+                                                                                className={`px-2 py-1 rounded-md text-xs font-medium ${isVisible ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                                                                            >
+                                                                                {isVisible ? t.hide : t.show}
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                }) : <p className="text-xs text-gray-500">{t.noSkillsInCategory}</p>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 rounded-md border border-dashed border-gray-300 p-3 bg-gray-50">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">{t.versionLocalAdditions}</p>
+                                            <div className="flex flex-col sm:flex-row gap-2 mb-2">
+                                                <input
+                                                    type="text"
+                                                    value={newVersionSkillCategory}
+                                                    onChange={(event) => setNewVersionSkillCategory(event.target.value)}
+                                                    placeholder={t.skillCategory}
+                                                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={newVersionSkillName}
+                                                    onChange={(event) => setNewVersionSkillName(event.target.value)}
+                                                    placeholder={t.newSkill}
+                                                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                                <button onClick={addVersionLocalSkill} className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm whitespace-nowrap">{t.addSkillVersion}</button>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                                                <input
+                                                    type="text"
+                                                    value={newVersionSectionTitle}
+                                                    onChange={(event) => setNewVersionSectionTitle(event.target.value)}
+                                                    placeholder={t.newSectionTitle}
+                                                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-sm"
+                                                />
+                                                <button onClick={addVersionLocalCustomSection} className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm whitespace-nowrap">{t.addSectionVersion}</button>
+                                            </div>
+
+                                            {((activeVersion.localAdditions && activeVersion.localAdditions.skills) || []).length > 0 ? (
+                                                <div className="mb-3">
+                                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">{t.pendingSkills}</p>
+                                                    {(activeVersion.localAdditions.skills || []).map((entry) => (
+                                                        <div key={entry.id} className="flex items-center justify-between rounded-md bg-white border border-gray-200 p-2 mb-1">
+                                                            <span className="text-sm">{entry.category}: {entry.label}</span>
+                                                            <button onClick={() => syncVersionLocalAdditionToMasterInApp('skills', entry.id)} className="px-2 py-1 bg-green-600 text-white rounded-md text-xs">{t.addToMaster}</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="mb-3 rounded-md border border-dashed border-gray-200 bg-white px-2 py-2 text-xs text-gray-500">
+                                                    {t.pendingSkills}: {t.noSkillsInCategory}
+                                                </div>
+                                            )}
+
+                                            {((activeVersion.localAdditions && activeVersion.localAdditions.customSections) || []).length > 0 ? (
+                                                <div>
+                                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">{t.pendingSections}</p>
+                                                    {(activeVersion.localAdditions.customSections || []).map((entry) => (
+                                                        <div key={entry.id} className="flex items-center justify-between rounded-md bg-white border border-gray-200 p-2 mb-1">
+                                                            <span className="text-sm">{entry.title}</span>
+                                                            <button onClick={() => syncVersionLocalAdditionToMasterInApp('customSections', entry.id)} className="px-2 py-1 bg-green-600 text-white rounded-md text-xs">{t.addToMaster}</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-md border border-dashed border-gray-200 bg-white px-2 py-2 text-xs text-gray-500">
+                                                    {t.pendingSections}: {t.noSkillsInCategory}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Personal Information */}
@@ -1099,6 +1981,29 @@
                                     <span>{t.exportToPdfImage || t.exportToPdf}</span>
                                 </button>
                                 <button
+                                    onClick={exportProjectBundle}
+                                    className="w-full px-6 py-3 bg-violet-600 text-white text-lg font-semibold rounded-md hover:bg-violet-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 18v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
+                                    </svg>
+                                    <span>Export Project</span>
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }}
+                                    onChange={handleFileSelect}
+                                    accept=".json"
+                                />
+                                <input
+                                    type="file"
+                                    id="projectBundleInput"
+                                    style={{ display: 'none' }}
+                                    onChange={importProjectBundle}
+                                    accept=".json"
+                                />
+                                <button
                                     onClick={saveCvToFile}
                                     className="w-full px-6 py-3 bg-purple-600 text-white text-lg font-semibold rounded-md hover:bg-purple-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
                                 >
@@ -1107,13 +2012,15 @@
                                     </svg>
                                     <span>{t.exportCvSession}</span>
                                 </button>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    style={{ display: 'none' }}
-                                    onChange={handleFileSelect}
-                                    accept=".json" // Only accept JSON files
-                                />
+                                <button
+                                    onClick={() => document.getElementById('projectBundleInput').click()}
+                                    className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span>Import Project</span>
+                                </button>
                                 <button
                                     onClick={triggerImport}
                                     className="w-full px-6 py-3 bg-orange-600 text-white text-lg font-semibold rounded-md hover:bg-orange-700 transition-colors shadow-lg flex items-center justify-center space-x-2"
